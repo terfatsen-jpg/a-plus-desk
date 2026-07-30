@@ -1,0 +1,1140 @@
+<meta charset="utf-8">
+<title>A+ DESK — Hourly Multi-Agent Setup Engine</title>
+<style>
+  :root {
+    --ink: #0B0E14;
+    --panel: #12161F;
+    --panel-raised: #171C27;
+    --hairline: #232938;
+    --hairline-soft: #1B2130;
+    --ash: #8A93A6;
+    --ash-dim: #5C6478;
+    --paper: #E8EAF0;
+    --signal: #FF9F1C;
+    --signal-soft: rgba(255, 159, 28, 0.14);
+    --bull: #3DDC97;
+    --bull-soft: rgba(61, 220, 151, 0.12);
+    --bear: #FF5C7A;
+    --bear-soft: rgba(255, 92, 122, 0.12);
+    --watch: #FFD166;
+    --watch-soft: rgba(255, 209, 102, 0.12);
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Consolas, monospace;
+    --sans: -apple-system, "Segoe UI", system-ui, sans-serif;
+  }
+
+  :root[data-theme="light"] {
+    --ink: #F2F4F8;
+    --panel: #FFFFFF;
+    --panel-raised: #FFFFFF;
+    --hairline: #D8DEE9;
+    --hairline-soft: #E6EAF1;
+    --ash: #5B6478;
+    --ash-dim: #8B93A4;
+    --paper: #131722;
+    --signal: #B5650A;
+    --signal-soft: rgba(181, 101, 10, 0.10);
+    --bull: #0F8F5F;
+    --bull-soft: rgba(15, 143, 95, 0.10);
+    --bear: #C22C48;
+    --bear-soft: rgba(194, 44, 72, 0.10);
+    --watch: #A6790A;
+    --watch-soft: rgba(166, 121, 10, 0.10);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --ink: #F2F4F8;
+      --panel: #FFFFFF;
+      --panel-raised: #FFFFFF;
+      --hairline: #D8DEE9;
+      --hairline-soft: #E6EAF1;
+      --ash: #5B6478;
+      --ash-dim: #8B93A4;
+      --paper: #131722;
+      --signal: #B5650A;
+      --signal-soft: rgba(181, 101, 10, 0.10);
+      --bull: #0F8F5F;
+      --bull-soft: rgba(15, 143, 95, 0.10);
+      --bear: #C22C48;
+      --bear-soft: rgba(194, 44, 72, 0.10);
+      --watch: #A6790A;
+      --watch-soft: rgba(166, 121, 10, 0.10);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--sans);
+    min-height: 100vh;
+    background-image:
+      repeating-linear-gradient(180deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 3px);
+  }
+
+  ::selection { background: var(--signal-soft); color: var(--paper); }
+
+  .desk {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 20px 20px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ---------- Header ---------- */
+  .header {
+    border: 1px solid var(--hairline);
+    background: var(--panel);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand .mark {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.06em;
+    color: var(--paper);
+  }
+  .brand .mark span { color: var(--signal); }
+  .brand .tag {
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--ash);
+  }
+
+  .status-strip { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+
+  .clock {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ash);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .clock b { color: var(--paper); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  .pill {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border: 1px solid var(--hairline);
+    text-transform: uppercase;
+  }
+  .pill.open { color: var(--bull); border-color: var(--bull); background: var(--bull-soft); }
+  .pill.closed { color: var(--ash); }
+
+  .countdown {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ash);
+  }
+  .countdown b { color: var(--signal); font-variant-numeric: tabular-nums; }
+
+  /* ---------- Index strip ---------- */
+  .index-strip {
+    border: 1px solid var(--hairline);
+    background: var(--panel);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .index-cell {
+    padding: 10px 16px;
+    border-right: 1px solid var(--hairline-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .index-cell:last-child { border-right: none; }
+  .index-cell .sym { font-family: var(--mono); font-size: 11px; color: var(--ash); letter-spacing: 0.04em; }
+  .index-cell .val { font-family: var(--mono); font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .index-cell .chg { font-family: var(--mono); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .up { color: var(--bull); }
+  .down { color: var(--bear); }
+
+  /* ---------- Main grid ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ash-dim);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--hairline-soft);
+    margin-bottom: 10px;
+  }
+
+  /* ---------- Agent pipeline ---------- */
+  .pipeline { display: flex; flex-direction: column; gap: 10px; }
+
+  .agent-card {
+    border: 1px solid var(--hairline);
+    background: var(--panel);
+    padding: 12px 14px;
+    position: relative;
+    transition: border-color 0.25s ease;
+  }
+  .agent-card.active { border-color: var(--signal); }
+  .agent-card.done-pass { border-color: var(--hairline); }
+
+  .agent-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .agent-id { display: flex; align-items: baseline; gap: 8px; }
+  .agent-num { font-family: var(--mono); font-size: 11px; color: var(--ash-dim); }
+  .agent-role { font-family: var(--sans); font-size: 13.5px; font-weight: 650; }
+
+  .status-chip {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border: 1px solid var(--hairline);
+    color: var(--ash-dim);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .status-chip .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ash-dim); flex: none; }
+  .status-chip.scanning { color: var(--signal); border-color: var(--signal); }
+  .status-chip.scanning .dot { background: var(--signal); animation: pulse 1.1s ease-in-out infinite; }
+  .status-chip.pass { color: var(--bull); border-color: var(--bull); }
+  .status-chip.pass .dot { background: var(--bull); }
+  .status-chip.flag { color: var(--watch); border-color: var(--watch); }
+  .status-chip.flag .dot { background: var(--watch); }
+  .status-chip.veto { color: var(--bear); border-color: var(--bear); }
+  .status-chip.veto .dot { background: var(--bear); }
+
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+  .agent-body {
+    margin-top: 9px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--ash);
+    min-height: 18px;
+  }
+  .agent-body .line {
+    opacity: 0;
+    animation: reveal 0.4s ease forwards;
+  }
+  .agent-body .line + .line { margin-top: 5px; }
+  .agent-body .verdict { color: var(--paper); font-weight: 600; }
+  @keyframes reveal { to { opacity: 1; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .agent-body .line { animation: none; opacity: 1; }
+    .status-chip.scanning .dot { animation: none; }
+  }
+
+  /* ---------- Setup card ---------- */
+  .setup-wrap { display: flex; flex-direction: column; gap: 16px; }
+
+  .setup-card {
+    border: 1px solid var(--hairline);
+    background: var(--panel-raised);
+    padding: 20px 22px;
+  }
+
+  .setup-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .ticker-block { display: flex; align-items: baseline; gap: 12px; }
+  .ticker-sym { font-family: var(--mono); font-size: 30px; font-weight: 700; letter-spacing: -0.01em; }
+  .ticker-name { font-size: 13px; color: var(--ash); }
+  .dir-chip {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 2px 8px;
+    border: 1px solid currentColor;
+    align-self: center;
+  }
+  .dir-chip.long { color: var(--bull); }
+  .dir-chip.short { color: var(--bear); }
+  .class-chip {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border: 1px solid var(--hairline);
+    color: var(--ash-dim);
+    align-self: center;
+  }
+
+  .grade-badge {
+    font-family: var(--mono);
+    font-weight: 800;
+    font-size: 26px;
+    line-height: 1;
+    padding: 8px 16px;
+    border: 1.5px solid currentColor;
+    flex: none;
+  }
+  .grade-badge.g-Aplus { color: var(--bull); background: var(--bull-soft); }
+  .grade-badge.g-A { color: var(--bull); }
+  .grade-badge.g-B { color: var(--watch); }
+  .grade-badge.g-C { color: var(--ash); }
+  .grade-badge.g-PASS { color: var(--bear); background: var(--bear-soft); }
+
+  .thesis {
+    margin-top: 14px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--paper);
+    max-width: 62ch;
+  }
+
+  .params-row {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--hairline-soft);
+    padding-top: 14px;
+  }
+  .param { display: flex; flex-direction: column; gap: 3px; }
+  .param .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ash-dim); }
+  .param .v { font-family: var(--mono); font-size: 16px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .param .v.bull { color: var(--bull); }
+  .param .v.bear { color: var(--bear); }
+
+  .confidence-row { margin-top: 14px; display: flex; align-items: center; gap: 10px; }
+  .confidence-row .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ash-dim); flex: none; }
+  .meter { flex: 1; height: 6px; background: var(--hairline-soft); position: relative; overflow: hidden; }
+  .meter i { position: absolute; inset: 0 auto 0 0; background: var(--signal); width: 0%; transition: width 0.9s cubic-bezier(.2,.7,.3,1); }
+  .confidence-row .pct { font-family: var(--mono); font-size: 12px; font-weight: 650; width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .setup-empty {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ash-dim);
+    padding: 30px 4px;
+    text-align: center;
+  }
+
+  .cta-row { margin-top: 18px; display: flex; align-items: center; gap: 12px; }
+  .run-btn {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--signal);
+    color: #1a1204;
+    border: none;
+    padding: 9px 16px;
+    cursor: pointer;
+  }
+  .run-btn:hover { filter: brightness(1.08); }
+  .run-btn:disabled { opacity: 0.5; cursor: default; }
+  .run-btn:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
+
+  .ticker-select {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 650;
+    letter-spacing: 0.02em;
+    background: var(--panel);
+    color: var(--paper);
+    border: 1px solid var(--hairline);
+    padding: 9px 10px;
+    cursor: pointer;
+  }
+  .ticker-select:focus-visible { outline: 2px solid var(--signal); outline-offset: 1px; }
+  .cta-note { font-family: var(--mono); font-size: 11px; color: var(--ash-dim); }
+
+  /* ---------- History ---------- */
+  .history-table { border: 1px solid var(--hairline); background: var(--panel); }
+  .history-row {
+    display: grid;
+    grid-template-columns: 26px 62px 56px 1fr 46px 46px 58px;
+    gap: 8px;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--hairline-soft);
+    font-size: 12px;
+    align-items: center;
+  }
+  .history-row:last-child { border-bottom: none; }
+  .history-row.head {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ash-dim);
+  }
+  .history-row .t { font-family: var(--mono); color: var(--ash); font-variant-numeric: tabular-nums; }
+  .history-row .sym { font-family: var(--mono); font-weight: 650; }
+  .history-row .note { color: var(--ash); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .history-row .grade { font-family: var(--mono); font-weight: 700; text-align: right; }
+  .history-row .rr { font-family: var(--mono); color: var(--ash); text-align: right; font-variant-numeric: tabular-nums; }
+  .history-empty { padding: 16px 14px; font-family: var(--mono); font-size: 12px; color: var(--ash-dim); }
+
+  .taken-check {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--signal);
+    cursor: pointer;
+    margin: 0;
+  }
+  .taken-check:disabled { opacity: 0.25; cursor: default; }
+
+  .outcome-badge {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-align: right;
+  }
+  .outcome-badge.win { color: var(--bull); }
+  .outcome-badge.loss { color: var(--bear); }
+  .outcome-badge.open { color: var(--watch); }
+  .outcome-badge.na { color: var(--ash-dim); }
+
+  .winrate-strip {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 10px;
+    font-family: var(--mono);
+  }
+  .winrate-strip .pct { font-size: 20px; font-weight: 700; color: var(--paper); font-variant-numeric: tabular-nums; }
+  .winrate-strip .pct.empty { color: var(--ash-dim); font-size: 13px; font-weight: 500; }
+  .winrate-strip .breakdown { font-size: 11px; color: var(--ash-dim); }
+  .winrate-strip .breakdown b.w { color: var(--bull); font-weight: 700; }
+  .winrate-strip .breakdown b.l { color: var(--bear); font-weight: 700; }
+  .winrate-strip .breakdown b.o { color: var(--watch); font-weight: 700; }
+
+  /* ---------- Footer / disclaimer ---------- */
+  .disclaimer {
+    border: 1px solid var(--hairline);
+    background: var(--panel);
+    padding: 10px 14px;
+    font-size: 11.5px;
+    color: var(--ash-dim);
+    line-height: 1.5;
+  }
+  .disclaimer b { color: var(--ash); }
+
+  .roadmap {
+    border: 1px dashed var(--hairline);
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--ash);
+    line-height: 1.6;
+  }
+  .roadmap b { color: var(--paper); font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
+</style>
+
+<div class="desk">
+
+  <div class="header">
+    <div class="brand">
+      <div class="mark">A<span>+</span>&nbsp;DESK</div>
+      <div class="tag">Hourly Multi-Agent Setup Engine · Equities · Futures · Forex · Commodities</div>
+    </div>
+    <div class="status-strip">
+      <span id="marketPill" class="pill closed">Closed</span>
+      <span class="clock">NY <b id="nyClock">--:--:--</b></span>
+      <span class="countdown" id="countdownWrap">Next scan in <b id="countdown">--:--</b></span>
+      <span class="countdown" id="weekendMsg" style="display:none;">Futures/FX session closed for the weekend</span>
+    </div>
+  </div>
+
+  <div class="index-strip" id="indexStrip"></div>
+
+  <div class="grid">
+
+    <div class="pipeline-wrap">
+      <div class="section-label">Agent Pipeline</div>
+      <div class="pipeline" id="pipeline"></div>
+    </div>
+
+    <div class="setup-wrap">
+      <div>
+        <div class="section-label">Current Setup</div>
+        <div class="setup-card" id="setupCard">
+          <div class="setup-empty">No scan run yet this hour — press RUN SCAN or wait for the top of the hour.</div>
+        </div>
+        <div class="cta-row">
+          <select class="ticker-select" id="tickerSelect" aria-label="Ticker to scan">
+            <option value="auto">Auto · top ranked</option>
+          </select>
+          <button class="run-btn" id="runBtn">Run Scan Now</button>
+        </div>
+        <div class="cta-row" style="margin-top: 8px;">
+          <span class="cta-note" id="ctaNote">Real prices/indicators — cycles through ranked real candidates</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-label">Hourly Log</div>
+        <div class="winrate-strip" id="winrateStrip">
+          <span class="pct empty" id="winratePct">No trades ticked yet</span>
+          <span class="breakdown" id="winrateBreakdown"></span>
+        </div>
+        <div class="history-table">
+          <div class="history-row head">
+            <span title="Taken">Tk</span><span>Time</span><span>Sym</span><span>Note</span><span>Grade</span><span>R:R</span><span>Result</span>
+          </div>
+          <div id="historyBody"><div class="history-empty">No completed scans yet.</div></div>
+        </div>
+        <div class="cta-note" style="margin-top: 8px;">Tick a real (non-PASS) setup you actually took — its result auto-resolves against real prices on the next hourly refresh, and rolls into your win rate above.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="disclaimer">
+    <b>Real data, static snapshot.</b> Prices, daily EMA/RSI (trend bias), and intraday 15-min ATR + session high/low (stop/target sizing) below are genuine, pulled from a live market data source across equities, index futures, commodities, and forex, timestamped <span id="snapTime">—</span>. All grading is computed from that real math — nothing here is fabricated. Stops and targets are sized for day trading, not swing holds. The Risk Manager only clears trades in a 1–3 reward-to-risk band; everything else is graded PASS. It does <b>not</b> refresh live inside your browser: this is a static page, so the snapshot only changes when the page is regenerated. A GitHub Actions workflow does that automatically every hour, 24/7, independent of any device being on. Your ticked trades and win rate are saved in this browser's local storage only — they won't follow you to another device or browser, and clearing site data erases them. Nothing on this page is investment advice.
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // Real snapshot: EOD/latest bars pulled from a live public quote feed.
+  // Every price, EMA/RSI/ATR figure below is computed from that real data — see disclaimer.
+  // SNAPSHOT_START — replaced verbatim by update_snapshot.py on each scheduled refresh, do not hand-edit the region below.
+  var REAL_SNAPSHOT = {
+  "fetched_utc": "2026-07-30T11:09:49.982168Z",
+  "watchlist": [
+    { "symbol": "NVDA", "name": "NVIDIA Corp", "assetClass": "Equity", "sector": "Semis", "decimals": 2, "last": 190.01, "chg_pct": -3.55, "ema21": 202.97, "ema50": 203.94, "rsi14": 36.5, "atrIntraday": 1.45, "vol_ratio": 1.14, "sessionHi": 197.07, "sessionLo": 190.01, "exch_time": 1785355201 },
+    { "symbol": "AAPL", "name": "Apple Inc", "assetClass": "Equity", "sector": "Hardware", "decimals": 2, "last": 338.19, "chg_pct": -0.56, "ema21": 322.46, "ema50": 308.96, "rsi14": 64.3, "atrIntraday": 1.27, "vol_ratio": 1.13, "sessionHi": 344.57, "sessionLo": 337.35, "exch_time": 1785355201 },
+    { "symbol": "MSFT", "name": "Microsoft Corp", "assetClass": "Equity", "sector": "Software", "decimals": 2, "last": 390.54, "chg_pct": -0.71, "ema21": 389.84, "ema50": 394.02, "rsi14": 46.6, "atrIntraday": 2.07, "vol_ratio": 1.4, "sessionHi": 401.25, "sessionLo": 388.74, "exch_time": 1785355201 },
+    { "symbol": "TSLA", "name": "Tesla Inc", "assetClass": "Equity", "sector": "Auto / EV", "decimals": 2, "last": 298.32, "chg_pct": -2.97, "ema21": 360.87, "ema50": 382.17, "rsi14": 24.9, "atrIntraday": 2.34, "vol_ratio": 0.91, "sessionHi": 309.05, "sessionLo": 297.38, "exch_time": 1785355200 },
+    { "symbol": "AMD", "name": "Advanced Micro Devices", "assetClass": "Equity", "sector": "Semis", "decimals": 2, "last": 429.56, "chg_pct": -5.51, "ema21": 509.47, "ema50": 486.82, "rsi14": 35.4, "atrIntraday": 5.95, "vol_ratio": 1.17, "sessionHi": 457.22, "sessionLo": 424.03, "exch_time": 1785355201 },
+    { "symbol": "META", "name": "Meta Platforms", "assetClass": "Equity", "sector": "Internet", "decimals": 2, "last": 585.61, "chg_pct": -1.31, "ema21": 613.96, "ema50": 612.32, "rsi14": 41.6, "atrIntraday": 3.55, "vol_ratio": 1.14, "sessionHi": 599.97, "sessionLo": 582.22, "exch_time": 1785355201 },
+    { "symbol": "JPM", "name": "JPMorgan Chase", "assetClass": "Equity", "sector": "Financials", "decimals": 2, "last": 344.71, "chg_pct": -3.53, "ema21": 342.33, "ema50": 330.54, "rsi14": 56.7, "atrIntraday": 1.47, "vol_ratio": 0.84, "sessionHi": 357.37, "sessionLo": 343.78, "exch_time": 1785355202 },
+    { "symbol": "XOM", "name": "Exxon Mobil", "assetClass": "Equity", "sector": "Energy", "decimals": 2, "last": 156.75, "chg_pct": 2.42, "ema21": 148.87, "ema50": 147.49, "rsi14": 66.3, "atrIntraday": 0.5, "vol_ratio": 1.01, "sessionHi": 159.07, "sessionLo": 155.85, "exch_time": 1785355496 },
+    { "symbol": "ES", "name": "E-mini S&P 500 Future", "assetClass": "Index Future", "sector": "Index Future", "decimals": 2, "last": 7384.5, "chg_pct": 0.45, "ema21": 7482.65, "ema50": 7443.54, "rsi14": 40.0, "atrIntraday": 9.41, "vol_ratio": 0.18, "sessionHi": 7392.5, "sessionLo": 7351.5, "exch_time": 1785409190 },
+    { "symbol": "NQ", "name": "E-mini Nasdaq 100 Future", "assetClass": "Index Future", "sector": "Index Future", "decimals": 2, "last": 27616.75, "chg_pct": 1.0, "ema21": 28812.26, "ema50": 28922.04, "rsi14": 34.9, "atrIntraday": 59.04, "vol_ratio": 0.26, "sessionHi": 27648.0, "sessionLo": 27337.5, "exch_time": 1785409190 },
+    { "symbol": "YM", "name": "E-mini Dow Future", "assetClass": "Index Future", "sector": "Index Future", "decimals": 2, "last": 51882.0, "chg_pct": 0.23, "ema21": 52303.03, "ema50": 51723.67, "rsi14": 46.4, "atrIntraday": 62.5, "vol_ratio": 0.22, "sessionHi": 51957.0, "sessionLo": 51732.0, "exch_time": 1785409185 },
+    { "symbol": "RTY", "name": "E-mini Russell 2000 Future", "assetClass": "Index Future", "sector": "Index Future", "decimals": 2, "last": 2927.4, "chg_pct": 0.41, "ema21": 2963.33, "ema50": 2931.6, "rsi14": 44.3, "atrIntraday": 4.76, "vol_ratio": 0.16, "sessionHi": 2930.2, "sessionLo": 2910.7, "exch_time": 1785409170 },
+    { "symbol": "GC", "name": "Gold Future", "assetClass": "Commodity", "sector": "Metals", "decimals": 2, "last": 4136.3, "chg_pct": 2.52, "ema21": 4088.27, "ema50": 4212.18, "rsi14": 51.3, "atrIntraday": 9.94, "vol_ratio": 18.08, "sessionHi": 4142.2, "sessionLo": 4085.0, "exch_time": 1785409190 },
+    { "symbol": "SI", "name": "Silver Future", "assetClass": "Commodity", "sector": "Metals", "decimals": 2, "last": 58.28, "chg_pct": 0.73, "ema21": 59.26, "ema50": 63.65, "rsi14": 43.0, "atrIntraday": 0.27, "vol_ratio": 12.54, "sessionHi": 58.49, "sessionLo": 57.12, "exch_time": 1785409190 },
+    { "symbol": "CL", "name": "WTI Crude Oil Future", "assetClass": "Commodity", "sector": "Energy", "decimals": 2, "last": 83.73, "chg_pct": -0.86, "ema21": 81.56, "ema50": 82.81, "rsi14": 51.5, "atrIntraday": 0.56, "vol_ratio": 0.32, "sessionHi": 85.94, "sessionLo": 83.26, "exch_time": 1785409186 },
+    { "symbol": "NG", "name": "Natural Gas Future", "assetClass": "Commodity", "sector": "Energy", "decimals": 3, "last": 2.716, "chg_pct": -0.33, "ema21": 2.907, "ema50": 2.991, "rsi14": 34.2, "atrIntraday": 0.008, "vol_ratio": 0.07, "sessionHi": 2.745, "sessionLo": 2.709, "exch_time": 1785409183 },
+    { "symbol": "HG", "name": "Copper Future", "assetClass": "Commodity", "sector": "Metals", "decimals": 4, "last": 6.4345, "chg_pct": 2.57, "ema21": 6.3049, "ema50": 6.2534, "rsi14": 56.1, "atrIntraday": 0.0189, "vol_ratio": 9.58, "sessionHi": 6.4575, "sessionLo": 6.34, "exch_time": 1785409188 },
+    { "symbol": "EURUSD", "name": "Euro / US Dollar", "assetClass": "Forex", "sector": "Forex", "decimals": 4, "last": 1.148, "chg_pct": 0.82, "ema21": 1.1424, "ema50": 1.1481, "rsi14": 55.0, "atrIntraday": 0.0006, "vol_ratio": null, "sessionHi": 1.1486, "sessionLo": 1.1439, "exch_time": 1785409763 },
+    { "symbol": "GBPUSD", "name": "British Pound / US Dollar", "assetClass": "Forex", "sector": "Forex", "decimals": 4, "last": 1.339, "chg_pct": 0.77, "ema21": 1.3362, "ema50": 1.3375, "rsi14": 51.6, "atrIntraday": 0.001, "vol_ratio": null, "sessionHi": 1.3406, "sessionLo": 1.3334, "exch_time": 1785409763 },
+    { "symbol": "USDJPY", "name": "US Dollar / Japanese Yen", "assetClass": "Forex", "sector": "Forex", "decimals": 3, "last": 162.766, "chg_pct": -0.67, "ema21": 162.66, "ema50": 161.527, "rsi14": 54.3, "atrIntraday": 0.172, "vol_ratio": null, "sessionHi": 163.739, "sessionLo": 162.258, "exch_time": 1785409794 },
+    { "symbol": "AUDUSD", "name": "Australian Dollar / US Dollar", "assetClass": "Forex", "sector": "Forex", "decimals": 4, "last": 0.698, "chg_pct": 0.08, "ema21": 0.6978, "ema50": 0.7006, "rsi14": 47.7, "atrIntraday": 0.0004, "vol_ratio": null, "sessionHi": 0.6983, "sessionLo": 0.6949, "exch_time": 1785409763 },
+    { "symbol": "USDCAD", "name": "US Dollar / Canadian Dollar", "assetClass": "Forex", "sector": "Forex", "decimals": 4, "last": 1.4042, "chg_pct": -0.45, "ema21": 1.4095, "ema50": 1.4033, "rsi14": 44.1, "atrIntraday": 0.0009, "vol_ratio": null, "sessionHi": 1.4068, "sessionLo": 1.4027, "exch_time": 1785409794 }
+  ],
+  "indices": [
+    { "label": "SPX", "last": 7316.15, "chg_pct": -2.44 },
+    { "label": "NDX", "last": 27192.31, "chg_pct": -6.23 },
+    { "label": "DJI", "last": 51594.14, "chg_pct": -1.2 },
+    { "label": "VIX", "last": 19.48, "chg_pct": 4.84 }
+  ]
+  };
+  // SNAPSHOT_END
+
+  function fmt2(n) { return n.toFixed(2); }
+  function fmtP(n, dec) { return n.toFixed(dec == null ? 2 : dec); }
+  function sign(n) { return (n >= 0 ? "+" : "") + fmt2(n); }
+
+  // --- Real technical scoring: derived purely from the snapshot's EMA/RSI/ATR/volume/range fields ---
+  function scoreLong(x) {
+    var s = 50;
+    s += x.last > x.ema21 ? 12 : -10;
+    s += x.ema21 > x.ema50 ? 10 : -8;
+    if (x.rsi14 >= 50 && x.rsi14 <= 70) s += 12;
+    else if (x.rsi14 < 35) s += 8;
+    else if (x.rsi14 > 75) s -= 8;
+    if (x.vol_ratio > 1) s += 8;
+    var distToHi = (x.sessionHi - x.last) / x.last * 100;
+    if (distToHi >= 0 && distToHi <= 2) s += 10;
+    return Math.max(5, Math.min(97, Math.round(s)));
+  }
+  function scoreShort(x) {
+    var s = 50;
+    s += x.last < x.ema21 ? 12 : -10;
+    s += x.ema21 < x.ema50 ? 10 : -8;
+    if (x.rsi14 <= 50 && x.rsi14 >= 30) s += 12;
+    else if (x.rsi14 > 65) s += 8;
+    else if (x.rsi14 < 25) s -= 8;
+    if (x.vol_ratio > 1) s += 8;
+    var distToLo = (x.last - x.sessionLo) / x.last * 100;
+    if (distToLo >= 0 && distToLo <= 2) s += 10;
+    return Math.max(5, Math.min(97, Math.round(s)));
+  }
+
+  function rankCandidates() {
+    var list = [];
+    REAL_SNAPSHOT.watchlist.forEach(function (x) {
+      if (x.error || x.ema21 == null || x.ema50 == null || x.rsi14 == null) return;
+      if (x.atrIntraday == null || x.sessionHi == null || x.sessionLo == null) return;
+      var ls = scoreLong(x), ss = scoreShort(x);
+      if (ls >= ss) list.push({ x: x, dir: "long", score: ls });
+      else list.push({ x: x, dir: "short", score: ss });
+    });
+    list.sort(function (a, b) { return b.score - a.score; });
+    return list;
+  }
+  var CANDIDATES = rankCandidates();
+  var candidateIdx = 0;
+
+  var CANDIDATES_BY_SYMBOL = {};
+  CANDIDATES.forEach(function (c) { CANDIDATES_BY_SYMBOL[c.x.symbol] = c; });
+
+  var tickerSelect = document.getElementById("tickerSelect");
+  var ASSET_CLASS_ORDER = ["Equity", "Index Future", "Commodity", "Forex"];
+  ASSET_CLASS_ORDER.forEach(function (cls) {
+    var members = REAL_SNAPSHOT.watchlist.filter(function (x) { return x.assetClass === cls && CANDIDATES_BY_SYMBOL[x.symbol]; });
+    if (!members.length) return;
+    var group = document.createElement("optgroup");
+    group.label = cls;
+    members.forEach(function (x) {
+      var opt = document.createElement("option");
+      opt.value = x.symbol;
+      opt.textContent = x.symbol + " — " + x.name;
+      group.appendChild(opt);
+    });
+    tickerSelect.appendChild(group);
+  });
+
+  var VIX = REAL_SNAPSHOT.indices.filter(function (i) { return i.label === "VIX"; })[0];
+  var MACRO_CLEAN = !!VIX && VIX.last < 18;
+
+  var AGENTS = [
+    { id: "01", role: "Technical Analyst" },
+    { id: "02", role: "Macro / News Analyst" },
+    { id: "03", role: "Risk Manager" },
+    { id: "04", role: "Chief · Arbiter" }
+  ];
+
+  var pipelineEl = document.getElementById("pipeline");
+  AGENTS.forEach(function (a, i) {
+    var card = document.createElement("div");
+    card.className = "agent-card";
+    card.id = "agent-" + i;
+    card.innerHTML =
+      '<div class="agent-top">' +
+        '<div class="agent-id"><span class="agent-num">' + a.id + "</span>" +
+        '<span class="agent-role">' + a.role + "</span></div>" +
+        '<span class="status-chip" id="chip-' + i + '"><span class="dot"></span><span class="txt">Standby</span></span>' +
+      "</div>" +
+      '<div class="agent-body" id="body-' + i + '"></div>';
+    pipelineEl.appendChild(card);
+  });
+
+  var idxEl = document.getElementById("indexStrip");
+  REAL_SNAPSHOT.indices.forEach(function (ix) {
+    var cell = document.createElement("div");
+    cell.className = "index-cell";
+    if (ix.error || ix.last == null) {
+      cell.innerHTML = '<span class="sym">' + (ix.label || "?") + '</span><span class="val">—</span><span class="chg">n/a</span>';
+    } else {
+      cell.innerHTML =
+        '<span class="sym">' + ix.label + "</span>" +
+        '<span class="val">' + fmt2(ix.last) + "</span>" +
+        '<span class="chg ' + (ix.chg_pct >= 0 ? "up" : "down") + '">' + sign(ix.chg_pct) + "%</span>";
+    }
+    idxEl.appendChild(cell);
+  });
+
+  var snapTimeEl = document.getElementById("snapTime");
+  if (snapTimeEl) {
+    var snapDate = new Date(REAL_SNAPSHOT.fetched_utc);
+    var snapFmt = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York", month: "short", day: "numeric",
+      hour: "2-digit", minute: "2-digit", hour12: false
+    });
+    snapTimeEl.textContent = snapFmt.format(snapDate) + " ET";
+  }
+
+  function nyParts() {
+    var fmt = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      hour12: false, weekday: "short",
+      hour: "2-digit", minute: "2-digit", second: "2-digit"
+    });
+    var parts = {};
+    fmt.formatToParts(new Date()).forEach(function (p) { parts[p.type] = p.value; });
+    return {
+      weekday: parts.weekday,
+      h: parseInt(parts.hour, 10),
+      m: parseInt(parts.minute, 10),
+      s: parseInt(parts.second, 10)
+    };
+  }
+
+  // NYSE cash session — governs the pill label only (relevant to the 8 equity names).
+  function isEquityOpen(p) {
+    var isWeekday = ["Mon","Tue","Wed","Thu","Fri"].indexOf(p.weekday) !== -1;
+    var mins = p.h * 60 + p.m;
+    return isWeekday && mins >= 9 * 60 + 30 && mins < 16 * 60;
+  }
+  // Futures/FX/commodities trade nearly around the clock — closed only over the
+  // weekend gap (Fri 17:00 ET to Sun 18:00 ET). The hourly scan runs on this clock
+  // so it covers the whole multi-asset universe, not just NYSE hours.
+  function isGlobalSessionOpen(p) {
+    if (p.weekday === "Sat") return false;
+    if (p.weekday === "Fri" && p.h * 60 + p.m >= 17 * 60) return false;
+    if (p.weekday === "Sun" && p.h * 60 + p.m < 18 * 60) return false;
+    return true;
+  }
+
+  var marketPill = document.getElementById("marketPill");
+  var nyClock = document.getElementById("nyClock");
+  var countdownEl = document.getElementById("countdown");
+  var countdownWrap = document.getElementById("countdownWrap");
+  var weekendMsg = document.getElementById("weekendMsg");
+  var lastHourTriggered = -1;
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+
+  function tickClock() {
+    var p = nyParts();
+    nyClock.textContent = pad(p.h) + ":" + pad(p.m) + ":" + pad(p.s);
+    var eqOpen = isEquityOpen(p);
+    marketPill.textContent = "NYSE " + (eqOpen ? "Open" : "Closed");
+    marketPill.className = "pill " + (eqOpen ? "open" : "closed");
+
+    var sessionOpen = isGlobalSessionOpen(p);
+    if (sessionOpen) {
+      var secsLeft = (59 - p.m) * 60 + (60 - p.s);
+      if (p.m === 0 && p.s === 0) secsLeft = 3600;
+      var mm = Math.floor(secsLeft / 60), ss = secsLeft % 60;
+      countdownEl.textContent = pad(mm) + ":" + pad(ss);
+      countdownWrap.style.display = "";
+      weekendMsg.style.display = "none";
+      if (p.m === 0 && p.s <= 1 && lastHourTriggered !== p.h) {
+        lastHourTriggered = p.h;
+        runScan(true);
+      }
+    } else {
+      countdownWrap.style.display = "none";
+      weekendMsg.style.display = "";
+    }
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  var runBtn = document.getElementById("runBtn");
+  var ctaNote = document.getElementById("ctaNote");
+  var setupCard = document.getElementById("setupCard");
+  var historyBody = document.getElementById("historyBody");
+  var winratePct = document.getElementById("winratePct");
+  var winrateBreakdown = document.getElementById("winrateBreakdown");
+  var running = false;
+
+  if (!CANDIDATES.length) {
+    runBtn.disabled = true;
+    ctaNote.textContent = "No usable data in this snapshot — the last fetch failed for every instrument";
+    setupCard.innerHTML = '<div class="setup-empty">This snapshot has no usable data (the fetch failed for every instrument). Try again after the next refresh.</div>';
+  }
+
+  // --- Trade journal: persists across hourly refreshes via localStorage on this browser. ---
+  var JOURNAL_KEY = "aplusdesk_journal_v1";
+  var journal = [];
+
+  function loadJournal() {
+    try {
+      var raw = window.localStorage.getItem(JOURNAL_KEY);
+      journal = raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      journal = [];
+    }
+  }
+
+  function saveJournal() {
+    try {
+      window.localStorage.setItem(JOURNAL_KEY, JSON.stringify(journal));
+    } catch (e) { /* private-browsing or storage disabled — journal stays in-memory only this session */ }
+  }
+
+  function priceLookup(symbol) {
+    for (var i = 0; i < REAL_SNAPSHOT.watchlist.length; i++) {
+      var w = REAL_SNAPSHOT.watchlist[i];
+      if (w.symbol === symbol && !w.error && w.last != null) return w.last;
+    }
+    return null;
+  }
+
+  // Resolve any taken-and-open journal entries against a LATER real snapshot's price.
+  function resolveOutcomes() {
+    var changed = false;
+    journal.forEach(function (j) {
+      if (!j.isTrade || !j.taken || j.outcome !== "open") return;
+      if (REAL_SNAPSHOT.fetched_utc === j.snapshotAt) return; // same snapshot as entry — no new price info yet
+      var last = priceLookup(j.symbol);
+      if (last == null) return;
+      if (j.dir === "long") {
+        if (last >= j.target) { j.outcome = "win"; changed = true; }
+        else if (last <= j.stop) { j.outcome = "loss"; changed = true; }
+      } else {
+        if (last <= j.target) { j.outcome = "win"; changed = true; }
+        else if (last >= j.stop) { j.outcome = "loss"; changed = true; }
+      }
+    });
+    if (changed) saveJournal();
+  }
+
+  function updateWinRateStrip() {
+    var taken = journal.filter(function (j) { return j.isTrade && j.taken; });
+    var wins = taken.filter(function (j) { return j.outcome === "win"; }).length;
+    var losses = taken.filter(function (j) { return j.outcome === "loss"; }).length;
+    var open = taken.filter(function (j) { return j.outcome === "open"; }).length;
+    var decided = wins + losses;
+    if (decided === 0) {
+      winratePct.textContent = taken.length ? "Awaiting next refresh…" : "No trades ticked yet";
+      winratePct.className = "pct empty";
+      winrateBreakdown.textContent = open ? open + " open" : "";
+      return;
+    }
+    var pct = Math.round((wins / decided) * 100);
+    winratePct.textContent = pct + "% win rate";
+    winratePct.className = "pct";
+    winrateBreakdown.innerHTML = '<b class="w">' + wins + 'W</b> · <b class="l">' + losses + 'L</b>' + (open ? " · <b class=\"o\">" + open + " open</b>" : "");
+  }
+
+  function outcomeLabel(o) {
+    if (o === "win") return "WIN";
+    if (o === "loss") return "LOSS";
+    if (o === "open") return "OPEN";
+    return "—";
+  }
+
+  function renderHistory() {
+    if (!journal.length) {
+      historyBody.innerHTML = '<div class="history-empty">No completed scans yet.</div>';
+      return;
+    }
+    var sorted = journal.slice().sort(function (a, b) { return b.ts - a.ts; });
+    historyBody.innerHTML = "";
+    sorted.forEach(function (j) {
+      var gradeColor = j.grade === "Aplus" ? "var(--bull)" : j.grade === "A" ? "var(--bull)" : j.grade === "PASS" ? "var(--bear)" : "var(--watch)";
+      var row = document.createElement("div");
+      row.className = "history-row";
+      var checkboxHtml = j.isTrade
+        ? '<input type="checkbox" class="taken-check" data-id="' + j.id + '"' + (j.taken ? " checked" : "") + '>'
+        : '<input type="checkbox" class="taken-check" disabled title="PASS — no position to take">';
+      var outcomeClass = j.isTrade && j.taken ? j.outcome : "na";
+      row.innerHTML =
+        '<span>' + checkboxHtml + '</span>' +
+        '<span class="t">' + j.timeLabel + '</span>' +
+        '<span class="sym">' + j.symbol + '</span>' +
+        '<span class="note">' + j.note + '</span>' +
+        '<span class="grade" style="color:' + gradeColor + '">' + gradeLabel(j.grade) + '</span>' +
+        '<span class="rr">' + fmt2(j.rr) + '</span>' +
+        '<span class="outcome-badge ' + outcomeClass + '">' + (j.isTrade ? (j.taken ? outcomeLabel(j.outcome) : "—") : "n/a") + '</span>';
+      historyBody.appendChild(row);
+    });
+  }
+
+  historyBody.addEventListener("change", function (ev) {
+    var el = ev.target;
+    if (!el.classList || !el.classList.contains("taken-check") || el.disabled) return;
+    var id = el.getAttribute("data-id");
+    var entry = journal.filter(function (j) { return j.id === id; })[0];
+    if (!entry) return;
+    entry.taken = el.checked;
+    saveJournal();
+    resolveOutcomes();
+    renderHistory();
+    updateWinRateStrip();
+  });
+
+  loadJournal();
+  resolveOutcomes();
+  renderHistory();
+  updateWinRateStrip();
+
+  function setChip(i, cls, txt) {
+    var chip = document.getElementById("chip-" + i);
+    chip.className = "status-chip " + cls;
+    chip.querySelector(".txt").textContent = txt;
+  }
+
+  function typeLines(i, lines, done) {
+    var body = document.getElementById("body-" + i);
+    body.innerHTML = "";
+    var idx = 0;
+    function next() {
+      if (idx >= lines.length) { if (done) done(); return; }
+      var d = document.createElement("div");
+      d.className = "line" + (lines[idx].strong ? " verdict" : "");
+      d.textContent = lines[idx].text;
+      d.style.animationDelay = "0s";
+      body.appendChild(d);
+      idx++;
+      setTimeout(next, 420);
+    }
+    next();
+  }
+
+  function resetPipeline() {
+    for (var i = 0; i < AGENTS.length; i++) {
+      setChip(i, "", "Standby");
+      document.getElementById("body-" + i).innerHTML = "";
+      document.getElementById("agent-" + i).className = "agent-card";
+    }
+  }
+
+  function grade(techScore, macroClean, rr, riskVeto) {
+    if (riskVeto) return "PASS";
+    if (techScore >= 80 && macroClean && rr >= 2.5) return "Aplus";
+    if (techScore >= 70 && rr >= 2) return "A";
+    if (techScore >= 60) return "B";
+    return "C";
+  }
+  function gradeLabel(g) { return g === "Aplus" ? "A+" : g; }
+
+  function technicalLines(x, dir, score) {
+    var d = x.decimals;
+    var trendTxt;
+    if (dir === "long") {
+      trendTxt = (x.last > x.ema21 && x.ema21 > x.ema50)
+        ? "Price (" + fmtP(x.last, d) + ") is stacked above the 21EMA (" + fmtP(x.ema21, d) + ") and 50EMA (" + fmtP(x.ema50, d) + ") — trend aligned bullish."
+        : "Price (" + fmtP(x.last, d) + ") is testing the 21EMA (" + fmtP(x.ema21, d) + ") for a reclaim against the 50EMA (" + fmtP(x.ema50, d) + ").";
+    } else {
+      trendTxt = (x.last < x.ema21 && x.ema21 < x.ema50)
+        ? "Price (" + fmtP(x.last, d) + ") is stacked below the 21EMA (" + fmtP(x.ema21, d) + ") and 50EMA (" + fmtP(x.ema50, d) + ") — trend aligned bearish."
+        : "Price (" + fmtP(x.last, d) + ") is fading below the 21EMA (" + fmtP(x.ema21, d) + ") against the 50EMA (" + fmtP(x.ema50, d) + ").";
+    }
+    var rangeTxt = dir === "long"
+      ? "Sitting " + fmt2((x.sessionHi - x.last) / x.last * 100) + "% below the session high of " + fmtP(x.sessionHi, d) + "."
+      : "Sitting " + fmt2((x.last - x.sessionLo) / x.last * 100) + "% above the session low of " + fmtP(x.sessionLo, d) + ".";
+    var volTxt = x.vol_ratio != null
+      ? "RSI14 reads " + x.rsi14 + ", volume running " + x.vol_ratio + "x the 20-day average. "
+      : "RSI14 reads " + x.rsi14 + " (spot FX carries no exchange volume). ";
+    return [
+      { text: x.symbol + " (" + x.name + ") surfaced from the " + x.assetClass + " watchlist scan." },
+      { text: trendTxt },
+      { text: volTxt + rangeTxt },
+      { text: "Confidence score " + score + " / 100.", strong: true }
+    ];
+  }
+
+  function macroLines(x, clean) {
+    var vixTxt = VIX ? ("VIX at " + fmt2(VIX.last) + " (" + sign(VIX.chg_pct) + "% today)") : "Vol regime unavailable";
+    var moveTxt = Math.abs(x.chg_pct) >= 3
+      ? x.symbol + " is already " + sign(x.chg_pct) + "% today — chasing an extended move adds slippage risk."
+      : x.symbol + " is " + sign(x.chg_pct) + "% today, no extension concern yet.";
+    return [
+      { text: "Cross-checking the desk's vol regime and " + x.symbol + "'s own intraday move." },
+      { text: vixTxt + (clean ? " — no desk-wide de-risking flag." : " — elevated vol regime, desk trims size on new entries.") },
+      { text: moveTxt, strong: true }
+    ];
+  }
+
+  function riskLines(atr, stopPct, rr, veto, refLabel, refVal, dec) {
+    var refPhrase = (refLabel === "high" || refLabel === "low")
+      ? "today's session " + refLabel + " (" + fmtP(refVal, dec) + ")"
+      : "an ATR projection of " + fmtP(refVal, dec) + " (session extreme too close to serve as a target)";
+    return [
+      { text: "15-min ATR14 is " + fmtP(atr, dec) + " — stop set at 1.2x intraday ATR (" + fmt2(stopPct) + "% away), target referencing " + refPhrase + "." },
+      { text: veto
+          ? "R:R " + fmt2(rr) + " falls outside the desk's 1–3 R:R band — position vetoed."
+          : "R:R " + fmt2(rr) + " clears the desk's 1–3 R:R band, sizing approved.", strong: true }
+    ];
+  }
+
+  function runScan(auto) {
+    if (running) return;
+    if (!CANDIDATES.length) return;
+    running = true;
+    runBtn.disabled = true;
+    ctaNote.textContent = auto ? "Auto-triggered at the top of the hour" : "Scanning…";
+    resetPipeline();
+
+    var picked = tickerSelect.value;
+    var cand;
+    if (picked !== "auto" && CANDIDATES_BY_SYMBOL[picked]) {
+      cand = CANDIDATES_BY_SYMBOL[picked];
+    } else {
+      if (auto) candidateIdx = 0;
+      cand = CANDIDATES[candidateIdx % CANDIDATES.length];
+      candidateIdx++;
+    }
+    var x = cand.x, dir = cand.dir, techScore = cand.score;
+
+    // Step 0: Technical
+    document.getElementById("agent-0").classList.add("active");
+    setChip(0, "scanning", "Scanning");
+    setTimeout(function () {
+      setChip(0, "pass", "Signal found");
+      document.getElementById("agent-0").classList.remove("active");
+      typeLines(0, technicalLines(x, dir, techScore), function () { runMacro(); });
+    }, 900);
+
+    function runMacro() {
+      var clean = MACRO_CLEAN;
+      document.getElementById("agent-1").classList.add("active");
+      setChip(1, "scanning", "Checking");
+      setTimeout(function () {
+        setChip(1, clean ? "pass" : "flag", clean ? "Clear" : "Caution");
+        document.getElementById("agent-1").classList.remove("active");
+        typeLines(1, macroLines(x, clean), function () { runRisk(clean); });
+      }, 850);
+    }
+
+    function runRisk(macroClean) {
+      document.getElementById("agent-2").classList.add("active");
+      setChip(2, "scanning", "Sizing");
+      // Day-trade sizing: stop/target scale off intraday (15-min) ATR and today's
+      // session high/low, not the multi-day swing range — a day trader doesn't
+      // want a stop wide enough to hold through a week of chop.
+      var stopDist = x.atrIntraday * 1.2;
+      var stopPct = stopDist / x.last * 100;
+      var minTargetDist = x.atrIntraday * 2.0;
+      var refLabel, refVal, targetDist;
+      if (dir === "long") {
+        var distToHi = x.sessionHi > x.last ? x.sessionHi - x.last : 0;
+        if (distToHi >= minTargetDist) { refLabel = "high"; refVal = x.sessionHi; targetDist = distToHi; }
+        else { refLabel = "ATR projection"; refVal = x.last + x.atrIntraday * 2.5; targetDist = x.atrIntraday * 2.5; }
+      } else {
+        var distToLo = x.sessionLo < x.last ? x.last - x.sessionLo : 0;
+        if (distToLo >= minTargetDist) { refLabel = "low"; refVal = x.sessionLo; targetDist = distToLo; }
+        else { refLabel = "ATR projection"; refVal = x.last - x.atrIntraday * 2.5; targetDist = x.atrIntraday * 2.5; }
+      }
+      var rr = targetDist / stopDist;
+      // Desk mandate: only 1–3 R:R trades are in scope; tighten the floor when macro is cautious.
+      var minRR = macroClean ? 1.0 : 1.5;
+      var maxRR = 3.0;
+      var veto = rr < minRR || rr > maxRR;
+      setTimeout(function () {
+        setChip(2, veto ? "veto" : "pass", veto ? "Vetoed" : "Cleared");
+        document.getElementById("agent-2").classList.remove("active");
+        typeLines(2, riskLines(x.atrIntraday, stopPct, rr, veto, refLabel, refVal, x.decimals), function () {
+          runChief(macroClean, stopDist, targetDist, rr, veto, refVal);
+        });
+      }, 900);
+    }
+
+    function runChief(macroClean, stopDist, targetDist, rr, veto, refVal) {
+      document.getElementById("agent-3").classList.add("active");
+      setChip(3, "scanning", "Synthesizing");
+      setTimeout(function () {
+        var g = grade(techScore, macroClean, rr, veto);
+        setChip(3, g === "PASS" ? "veto" : (g === "Aplus" || g === "A" ? "pass" : "flag"),
+          g === "PASS" ? "No trade" : "Grade " + gradeLabel(g));
+        document.getElementById("agent-3").classList.remove("active");
+        typeLines(3, [
+          { text: "Weighing a " + techScore + " technical read against a " + (macroClean ? "clean" : "cautious") + " macro backdrop and a " + fmt2(rr) + " R:R." },
+          { text: g === "PASS"
+              ? "Final call: PASS — setup does not clear the desk's risk bar this hour."
+              : "Final call: " + gradeLabel(g) + " grade, " + dir.toUpperCase() + " " + x.symbol + ".", strong: true }
+        ]);
+        renderSetup(x, dir, g, techScore, stopDist, targetDist, rr, macroClean);
+        logRun(x, dir, g, rr, stopDist, targetDist);
+        running = false;
+        runBtn.disabled = false;
+        ctaNote.textContent = "Real prices/indicators — cycles through ranked real candidates";
+      }, 950);
+    }
+  }
+
+  function renderSetup(x, dir, g, techScore, stopDist, targetDist, rr, macroClean) {
+    var d = x.decimals;
+    if (g === "PASS") {
+      setupCard.innerHTML =
+        '<div class="setup-head">' +
+          '<div class="ticker-block"><span class="ticker-sym">' + x.symbol + '</span>' +
+          '<span class="class-chip">' + x.assetClass + '</span>' +
+          '<span class="ticker-name">' + x.name + '</span></div>' +
+          '<span class="grade-badge g-PASS">PASS</span>' +
+        '</div>' +
+        '<div class="thesis">' + dir.toUpperCase() + ' read scores ' + techScore + '/100, but risk sizing at ' + fmt2(rr) + ':1 falls outside the desk\'s 1–3 R:R band. No position taken.</div>';
+      return;
+    }
+    var entry = x.last;
+    var stop = dir === "long" ? entry - stopDist : entry + stopDist;
+    var target = dir === "long" ? entry + targetDist : entry - targetDist;
+
+    setupCard.innerHTML =
+      '<div class="setup-head">' +
+        '<div class="ticker-block">' +
+          '<span class="ticker-sym">' + x.symbol + '</span>' +
+          '<span class="dir-chip ' + dir + '">' + dir.toUpperCase() + '</span>' +
+          '<span class="class-chip">' + x.assetClass + '</span>' +
+          '<span class="ticker-name">' + x.name + '</span>' +
+        '</div>' +
+        '<span class="grade-badge g-' + g + '">' + gradeLabel(g) + '</span>' +
+      '</div>' +
+      '<div class="thesis">' + x.symbol + ' at ' + fmtP(entry, d) + ', RSI14 ' + x.rsi14 + '. ' + (macroClean ? "Macro backdrop is clean" : "Desk is carrying a macro caution flag") + ', and risk sizing clears at ' + fmt2(rr) + ':1.</div>' +
+      '<div class="params-row">' +
+        '<div class="param"><span class="k">Entry</span><span class="v">' + fmtP(entry, d) + '</span></div>' +
+        '<div class="param"><span class="k">Stop</span><span class="v bear">' + fmtP(stop, d) + '</span></div>' +
+        '<div class="param"><span class="k">Target</span><span class="v bull">' + fmtP(target, d) + '</span></div>' +
+        '<div class="param"><span class="k">R : R</span><span class="v">' + fmt2(rr) + '</span></div>' +
+      '</div>' +
+      '<div class="confidence-row">' +
+        '<span class="k">Confidence</span>' +
+        '<div class="meter"><i id="meterFill"></i></div>' +
+        '<span class="pct">' + techScore + '</span>' +
+      '</div>';
+    requestAnimationFrame(function () {
+      var fill = document.getElementById("meterFill");
+      if (fill) fill.style.width = techScore + "%";
+    });
+  }
+
+  function logRun(x, dir, g, rr, stopDist, targetDist) {
+    var p = nyParts();
+    var isTrade = g !== "PASS";
+    var entry = x.last;
+    var stop = dir === "long" ? entry - stopDist : entry + stopDist;
+    var target = dir === "long" ? entry + targetDist : entry - targetDist;
+    journal.push({
+      id: Date.now() + "-" + x.symbol + "-" + Math.random().toString(36).slice(2, 7),
+      ts: Date.now(),
+      timeLabel: pad(p.h) + ":" + pad(p.m),
+      symbol: x.symbol,
+      assetClass: x.assetClass,
+      dir: dir,
+      note: dir.toUpperCase() + " · " + x.assetClass + " · EMA21 " + fmtP(x.ema21, x.decimals) + " · RSI " + x.rsi14,
+      grade: g,
+      rr: rr,
+      isTrade: isTrade,
+      entry: entry, stop: stop, target: target, decimals: x.decimals,
+      snapshotAt: REAL_SNAPSHOT.fetched_utc,
+      taken: false,
+      outcome: "open"
+    });
+    saveJournal();
+    renderHistory();
+    updateWinRateStrip();
+  }
+
+  runBtn.addEventListener("click", function () { runScan(false); });
+})();
+</script>
