@@ -519,7 +519,7 @@
   </div>
 
   <div class="disclaimer">
-    <b>Real data, static snapshot.</b> Prices, daily EMA/RSI (trend bias), and intraday 15-min ATR + session high/low (stop/target sizing) below are genuine, pulled from a live market data source across equities, index futures, commodities, and forex, timestamped <span id="snapTime">—</span>. All grading is computed from that real math — nothing here is fabricated. Stops and targets are sized for day trading, not swing holds. The Risk Manager only clears trades in a 1–3 reward-to-risk band; everything else is graded PASS. It does <b>not</b> refresh live inside your browser: this is a static page, so the snapshot only changes when the page is regenerated. A GitHub Actions workflow does that automatically every hour, 24/7, independent of any device being on. Your ticked trades and win rate are saved in this browser's local storage only — they won't follow you to another device or browser, and clearing site data erases them. Nothing on this page is investment advice.
+    <b>Real data.</b> Prices, daily EMA/RSI (trend bias), and intraday 15-min ATR + session high/low (stop/target sizing) are genuine, pulled from a live market data source across equities, index futures, commodities, and forex — data timestamped <span id="snapTime">—</span>. All grading is computed from that real math; nothing here is fabricated. Stops and targets are sized for day trading, not swing holds. The Risk Manager only clears trades in a 1–3 reward-to-risk band; everything else is graded PASS. The page pulls fresh data on load from a worker that re-fetches hourly, so opening it gives you current data; if that worker is unreachable it falls back to the snapshot baked in at publish time (the label after the timestamp tells you which you're seeing). Your ticked trades and win rate are saved in this browser's local storage only — they won't follow you to another device or browser, and clearing site data erases them. Nothing on this page is investment advice.
   </div>
 
 </div>
@@ -532,7 +532,7 @@
   // Every price, EMA/RSI/ATR figure below is computed from that real data — see disclaimer.
   // SNAPSHOT_START — replaced verbatim by update_snapshot.py on each scheduled refresh, do not hand-edit the region below.
   var REAL_SNAPSHOT = {
-  "fetched_utc": "2026-08-04T21:03:34.721915Z",
+  "fetched_utc": "2026-08-05T00:22:01.998143Z",
   "watchlist": [
     { "symbol": "NVDA", "name": "NVIDIA Corp", "assetClass": "Equity", "sector": "Semis", "decimals": 2, "last": 211.94, "chg_pct": 2.56, "ema21": 203.38, "ema50": 203.8, "rsi14": 56.8, "atrIntraday": 0.66, "vol_ratio": 1.01, "sessionHi": 213.06, "sessionLo": 209.05, "exch_time": 1785873600 },
     { "symbol": "AAPL", "name": "Apple Inc", "assetClass": "Equity", "sector": "Hardware", "decimals": 2, "last": 309.38, "chg_pct": 1.96, "ema21": 319.43, "ema50": 309.72, "rsi14": 44.1, "atrIntraday": 1.01, "vol_ratio": 1.21, "sessionHi": 310.42, "sessionLo": 301.32, "exch_time": 1785873601 },
@@ -542,20 +542,20 @@
     { "symbol": "META", "name": "Meta Platforms", "assetClass": "Equity", "sector": "Internet", "decimals": 2, "last": 587.94, "chg_pct": -0.39, "ema21": 600.21, "ema50": 605.67, "rsi14": 46.4, "atrIntraday": 2.35, "vol_ratio": 0.87, "sessionHi": 592.79, "sessionLo": 578.25, "exch_time": 1785873600 },
     { "symbol": "JPM", "name": "JPMorgan Chase", "assetClass": "Equity", "sector": "Financials", "decimals": 2, "last": 357.52, "chg_pct": 1.38, "ema21": 345.86, "ema50": 333.93, "rsi14": 65.4, "atrIntraday": 0.76, "vol_ratio": 0.91, "sessionHi": 363.0, "sessionLo": 353.87, "exch_time": 1785873602 },
     { "symbol": "XOM", "name": "Exxon Mobil", "assetClass": "Equity", "sector": "Energy", "decimals": 2, "last": 153.96, "chg_pct": -0.71, "ema21": 150.89, "ema50": 148.68, "rsi14": 57.0, "atrIntraday": 0.42, "vol_ratio": 0.96, "sessionHi": 154.84, "sessionLo": 149.09, "exch_time": 1785873808 },
-    { "symbol": "ES", "name": "E-mini S&P 500 Future", "assetClass": "Index Future", "sector": "Index Future", "decimals": 2, "last": 7772.75, "chg_pct": 1.89, "ema21": 7529.81, "ema50": 7468.81, "rsi14": 65.9, "atrIntraday": 10.64, "vol_ratio": 1.1, "sessionHi": 7786.0, "sessionLo": 7631.75, "exch_time": 1785876811 },
-    { "symbol": "NQ", "name": "E-mini Nasdaq 100 Future", "assetClass": "Index Future", "sector": "Index Future", "decimals": 2, "last": 29793.25, "chg_pct": 3.12, "ema21": 28919.74, "ema50": 28953.41, "rsi14": 57.0, "atrIntraday": 62.62, "vol_ratio": 1.04, "sessionHi": 29956.5, "sessionLo": 28968.5, "exch_time": 1785876814 },
-    { "symbol": "YM", "name": "E-mini Dow Future", "assetClass": "Index Future", "sector": "Index Future", "decimals": 2, "last": 54378.0, "chg_pct": 1.96, "ema21": 52635.75, "ema50": 51942.44, "rsi14": 67.0, "atrIntraday": 62.07, "vol_ratio": 1.2, "sessionHi": 54423.0, "sessionLo": 53267.0, "exch_time": 1785876804 },
-    { "symbol": "RTY", "name": "E-mini Russell 2000 Future", "assetClass": "Index Future", "sector": "Index Future", "decimals": 2, "last": 3047.7, "chg_pct": 1.95, "ema21": 2973.08, "ema50": 2939.53, "rsi14": 62.3, "atrIntraday": 3.61, "vol_ratio": 0.93, "sessionHi": 3051.8, "sessionLo": 2986.1, "exch_time": 1785876809 },
-    { "symbol": "GC", "name": "Gold Future", "assetClass": "Commodity", "sector": "Metals", "decimals": 2, "last": 4133.8, "chg_pct": 2.48, "ema21": 4082.49, "ema50": 4196.58, "rsi14": 52.2, "atrIntraday": 4.92, "vol_ratio": 9.97, "sessionHi": 4163.8, "sessionLo": 4101.4, "exch_time": 1785876808 },
-    { "symbol": "SI", "name": "Silver Future", "assetClass": "Commodity", "sector": "Metals", "decimals": 2, "last": 59.73, "chg_pct": 3.58, "ema21": 59.08, "ema50": 63.11, "rsi14": 49.6, "atrIntraday": 0.11, "vol_ratio": 17.04, "sessionHi": 60.28, "sessionLo": 58.78, "exch_time": 1785876763 },
-    { "symbol": "CL", "name": "WTI Crude Oil Future", "assetClass": "Commodity", "sector": "Energy", "decimals": 2, "last": 75.36, "chg_pct": -6.2, "ema21": 81.12, "ema50": 82.49, "rsi14": 40.6, "atrIntraday": 0.25, "vol_ratio": 1.12, "sessionHi": 82.33, "sessionLo": 75.16, "exch_time": 1785876809 },
-    { "symbol": "NG", "name": "Natural Gas Future", "assetClass": "Commodity", "sector": "Energy", "decimals": 3, "last": 2.684, "chg_pct": -3.49, "ema21": 2.867, "ema50": 2.958, "rsi14": 35.2, "atrIntraday": 0.006, "vol_ratio": 1.05, "sessionHi": 2.785, "sessionLo": 2.659, "exch_time": 1785876815 },
-    { "symbol": "HG", "name": "Copper Future", "assetClass": "Commodity", "sector": "Metals", "decimals": 4, "last": 6.627, "chg_pct": 1.73, "ema21": 6.362, "ema50": 6.2844, "rsi14": 64.6, "atrIntraday": 0.0069, "vol_ratio": 13.35, "sessionHi": 6.6885, "sessionLo": 6.5835, "exch_time": 1785876815 },
-    { "symbol": "EURUSD", "name": "Euro / US Dollar", "assetClass": "Forex", "sector": "Forex", "decimals": 4, "last": 1.1531, "chg_pct": 0.21, "ema21": 1.1456, "ema50": 1.1487, "rsi14": 59.2, "atrIntraday": 0.0003, "vol_ratio": null, "sessionHi": 1.1537, "sessionLo": 1.1506, "exch_time": 1785877375 },
-    { "symbol": "GBPUSD", "name": "British Pound / US Dollar", "assetClass": "Forex", "sector": "Forex", "decimals": 4, "last": 1.345, "chg_pct": 0.17, "ema21": 1.3391, "ema50": 1.3386, "rsi14": 54.9, "atrIntraday": 0.0003, "vol_ratio": null, "sessionHi": 1.3456, "sessionLo": 1.342, "exch_time": 1785877375 },
-    { "symbol": "USDJPY", "name": "US Dollar / Japanese Yen", "assetClass": "Forex", "sector": "Forex", "decimals": 3, "last": 157.729, "chg_pct": 0.13, "ema21": 161.27, "ema50": 161.069, "rsi14": 26.0, "atrIntraday": 0.072, "vol_ratio": null, "sessionHi": 157.958, "sessionLo": 157.205, "exch_time": 1785877405 },
-    { "symbol": "AUDUSD", "name": "Australian Dollar / US Dollar", "assetClass": "Forex", "sector": "Forex", "decimals": 4, "last": 0.7048, "chg_pct": 0.72, "ema21": 0.6993, "ema50": 0.7009, "rsi14": 58.9, "atrIntraday": 0.0002, "vol_ratio": null, "sessionHi": 0.7051, "sessionLo": 0.6999, "exch_time": 1785877315 },
-    { "symbol": "USDCAD", "name": "US Dollar / Canadian Dollar", "assetClass": "Forex", "sector": "Forex", "decimals": 4, "last": 1.4061, "chg_pct": 0.1, "ema21": 1.4075, "ema50": 1.4034, "rsi14": 49.7, "atrIntraday": 0.0008, "vol_ratio": null, "sessionHi": 1.408, "sessionLo": 1.403, "exch_time": 1785877410 }
+    { "symbol": "ES", "name": "E-mini S&P 500 Future", "assetClass": "Index Future", "sector": "Index Future", "decimals": 2, "last": 7779.5, "chg_pct": 1.98, "ema21": 7530.42, "ema50": 7469.08, "rsi14": 66.2, "atrIntraday": 6.02, "vol_ratio": 0.01, "sessionHi": 7786.0, "sessionLo": 7631.75, "exch_time": 1785888722 },
+    { "symbol": "NQ", "name": "E-mini Nasdaq 100 Future", "assetClass": "Index Future", "sector": "Index Future", "decimals": 2, "last": 29851.75, "chg_pct": 3.32, "ema21": 28925.06, "ema50": 28955.71, "rsi14": 57.4, "atrIntraday": 50.66, "vol_ratio": 0.03, "sessionHi": 29956.5, "sessionLo": 28968.5, "exch_time": 1785888722 },
+    { "symbol": "YM", "name": "E-mini Dow Future", "assetClass": "Index Future", "sector": "Index Future", "decimals": 2, "last": 54366.0, "chg_pct": 1.93, "ema21": 52634.66, "ema50": 51941.97, "rsi14": 67.0, "atrIntraday": 33.57, "vol_ratio": 0.01, "sessionHi": 54423.0, "sessionLo": 53267.0, "exch_time": 1785888715 },
+    { "symbol": "RTY", "name": "E-mini Russell 2000 Future", "assetClass": "Index Future", "sector": "Index Future", "decimals": 2, "last": 3051.3, "chg_pct": 2.07, "ema21": 2973.41, "ema50": 2939.67, "rsi14": 62.7, "atrIntraday": 2.14, "vol_ratio": 0.01, "sessionHi": 3053.9, "sessionLo": 2986.1, "exch_time": 1785888719 },
+    { "symbol": "GC", "name": "Gold Future", "assetClass": "Commodity", "sector": "Metals", "decimals": 2, "last": 4128.3, "chg_pct": 2.35, "ema21": 4081.99, "ema50": 4196.37, "rsi14": 51.8, "atrIntraday": 4.69, "vol_ratio": 1.02, "sessionHi": 4163.8, "sessionLo": 4101.4, "exch_time": 1785888709 },
+    { "symbol": "SI", "name": "Silver Future", "assetClass": "Commodity", "sector": "Metals", "decimals": 2, "last": 59.66, "chg_pct": 3.45, "ema21": 59.07, "ema50": 63.11, "rsi14": 49.4, "atrIntraday": 0.07, "vol_ratio": 1.3, "sessionHi": 60.28, "sessionLo": 58.78, "exch_time": 1785888685 },
+    { "symbol": "CL", "name": "WTI Crude Oil Future", "assetClass": "Commodity", "sector": "Energy", "decimals": 2, "last": 75.26, "chg_pct": -6.32, "ema21": 81.11, "ema50": 82.48, "rsi14": 40.5, "atrIntraday": 0.28, "vol_ratio": 0.02, "sessionHi": 82.33, "sessionLo": 74.3, "exch_time": 1785888716 },
+    { "symbol": "NG", "name": "Natural Gas Future", "assetClass": "Commodity", "sector": "Energy", "decimals": 3, "last": 2.689, "chg_pct": -3.31, "ema21": 2.867, "ema50": 2.958, "rsi14": 35.4, "atrIntraday": 0.004, "vol_ratio": 0.01, "sessionHi": 2.785, "sessionLo": 2.659, "exch_time": 1785888721 },
+    { "symbol": "HG", "name": "Copper Future", "assetClass": "Commodity", "sector": "Metals", "decimals": 4, "last": 6.6235, "chg_pct": 1.68, "ema21": 6.3617, "ema50": 6.2842, "rsi14": 64.5, "atrIntraday": 0.0053, "vol_ratio": 0.47, "sessionHi": 6.6885, "sessionLo": 6.5835, "exch_time": 1785888722 },
+    { "symbol": "EURUSD", "name": "Euro / US Dollar", "assetClass": "Forex", "sector": "Forex", "decimals": 4, "last": 1.1537, "chg_pct": 0.26, "ema21": 1.1456, "ema50": 1.1487, "rsi14": 59.7, "atrIntraday": 0.0002, "vol_ratio": null, "sessionHi": 1.1538, "sessionLo": 1.1533, "exch_time": 1785889313 },
+    { "symbol": "GBPUSD", "name": "British Pound / US Dollar", "assetClass": "Forex", "sector": "Forex", "decimals": 4, "last": 1.3454, "chg_pct": 0.2, "ema21": 1.3391, "ema50": 1.3386, "rsi14": 55.2, "atrIntraday": 0.0003, "vol_ratio": null, "sessionHi": 1.3454, "sessionLo": 1.3448, "exch_time": 1785889313 },
+    { "symbol": "USDJPY", "name": "US Dollar / Japanese Yen", "assetClass": "Forex", "sector": "Forex", "decimals": 3, "last": 157.63, "chg_pct": 0.06, "ema21": 161.261, "ema50": 161.071, "rsi14": 25.1, "atrIntraday": 0.082, "vol_ratio": null, "sessionHi": 157.809, "sessionLo": 157.619, "exch_time": 1785889326 },
+    { "symbol": "AUDUSD", "name": "Australian Dollar / US Dollar", "assetClass": "Forex", "sector": "Forex", "decimals": 4, "last": 0.7053, "chg_pct": 0.79, "ema21": 0.6993, "ema50": 0.7009, "rsi14": 59.4, "atrIntraday": 0.0002, "vol_ratio": null, "sessionHi": 0.7053, "sessionLo": 0.7048, "exch_time": 1785889313 },
+    { "symbol": "USDCAD", "name": "US Dollar / Canadian Dollar", "assetClass": "Forex", "sector": "Forex", "decimals": 4, "last": 1.4064, "chg_pct": 0.13, "ema21": 1.4076, "ema50": 1.4034, "rsi14": 50.1, "atrIntraday": 0.0006, "vol_ratio": null, "sessionHi": 1.4069, "sessionLo": 1.4059, "exch_time": 1785889327 }
   ],
   "indices": [
     { "label": "SPX", "last": 7736.52, "chg_pct": 4.14 },
@@ -565,6 +565,41 @@
   ]
   };
   // SNAPSHOT_END
+
+  // The snapshot above is a build-time fallback. On load we try the data worker,
+  // which re-fetches real market data hourly on a Cloudflare cron, so an open page
+  // shows current data rather than whatever was baked in at publish time.
+  var DATA_WORKER_URL = "https://a-plus-desk-data.terfatsen.workers.dev/";
+  var dataSourceLabel = "build-time snapshot";
+
+  function boot() {
+    var done = false;
+    function go() {
+      if (done) return;
+      done = true;
+      main();
+    }
+    // Never let a slow/blocked worker keep the desk from rendering.
+    var timer = setTimeout(go, 4000);
+    try {
+      fetch(DATA_WORKER_URL, { cache: "no-store" })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (live) {
+          if (live && live.watchlist && live.watchlist.length && live.fetched_utc) {
+            REAL_SNAPSHOT = live;
+            dataSourceLabel = "live";
+          }
+          clearTimeout(timer);
+          go();
+        })
+        .catch(function () { clearTimeout(timer); go(); });
+    } catch (e) {
+      clearTimeout(timer);
+      go();
+    }
+  }
+
+  function main() {
 
   function fmt2(n) { return n.toFixed(2); }
   function fmtP(n, dec) { return n.toFixed(dec == null ? 2 : dec); }
@@ -677,7 +712,9 @@
       timeZone: "America/New_York", month: "short", day: "numeric",
       hour: "2-digit", minute: "2-digit", hour12: false
     });
-    snapTimeEl.textContent = snapFmt.format(snapDate) + " ET";
+    var ageMin = Math.max(0, Math.round((Date.now() - snapDate.getTime()) / 60000));
+    var ageTxt = ageMin < 90 ? ageMin + " min ago" : Math.round(ageMin / 60) + "h ago";
+    snapTimeEl.textContent = snapFmt.format(snapDate) + " ET (" + ageTxt + ", " + dataSourceLabel + ")";
   }
 
   function nyParts() {
@@ -1136,5 +1173,9 @@
   }
 
   runBtn.addEventListener("click", function () { runScan(false); });
+
+  }
+
+  boot();
 })();
 </script>
