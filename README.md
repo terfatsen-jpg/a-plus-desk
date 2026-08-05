@@ -1,20 +1,68 @@
 # A+ DESK
 
-A day-trading terminal where four agent roles (Technical Analyst, Macro/News Analyst, Risk Manager, Chief/Arbiter) grade setups across equities, index futures, commodities, and forex using real market data — no fabricated numbers.
+A multi-agent day-trading terminal. Four agent roles — Technical Analyst, Macro/Policy Analyst,
+Risk Manager and Chief/Arbiter — grade setups across 22 instruments (equities, index futures,
+commodities, forex) from real market data. Every number on the page is fetched, not fabricated.
 
-- Prices, daily EMA/RSI, and intraday 15-min ATR + session high/low are pulled live from Yahoo Finance's public chart endpoint (no API key needed).
-- Stops and targets are sized for day trading off intraday volatility, not swing-scale daily ranges.
-- Only setups with a 1–3 reward-to-risk ratio clear the Risk Manager; everything else grades PASS.
-- Tick a setup you actually took and its outcome auto-resolves against real prices on the next refresh, rolling into a win-rate stat (stored in your browser's local storage).
+**Live:** https://terfatsen-jpg.github.io/a-plus-desk/
 
-## How it stays live
+## What it does
 
-`.github/workflows/hourly-refresh.yml` runs `update_snapshot.py` every hour via GitHub Actions, which re-fetches real data and commits the updated `index.html` — no server, no device that needs to stay on.
+- **Deterministic, auditable grading.** Expand any agent row to see the full derivation: every
+  scoring rule with its individual contribution, the raw inputs behind it, and which rung of the
+  grade ladder fired. Grading is fixed rules, not a language model's opinion — so it is
+  reproducible and inspectable.
+- **Day-trade sizing.** Stops are 1.2x the *intraday* (15-min) ATR and targets reference the
+  current session high/low, not a multi-day swing range. Only setups in a **1–3 reward-to-risk**
+  band clear the Risk Manager; the floor tightens to 1.5 when VIX signals a cautious regime.
+- **Policy-maker tracking.** Pulls the official Federal Reserve (speeches + monetary press), ECB
+  and Bank of England feeds, identifies which named official is speaking, and weights them by
+  seniority — a Chair or Vice Chair moves markets in a way a regional president does not.
+  Instruments are mapped to the currencies whose policy actually bears on them, with direction:
+  a hawkish Fed is USD-positive, which is EURUSD-*negative* but USDJPY-*positive*.
+- **Headline sentiment** per instrument, with the matched keywords shown so a score can be audited.
+- **Charts.** TradingView Lightweight Charts, vendored locally, with entry/stop/target plotted.
+- **Trade journal.** Tick a setup you actually took; it auto-resolves to WIN/LOSS against real
+  prices on the next refresh and rolls into a win rate. Stored in your browser only.
 
-## Files
+## Honesty constraints (deliberate)
 
-- `index.html` — the page itself (static HTML/CSS/JS, no build step)
-- `fetch_real.py` — fetches and computes real EMA/RSI/ATR/session-range data
-- `update_snapshot.py` — splices a fresh snapshot into `index.html` between the `SNAPSHOT_START`/`SNAPSHOT_END` markers
+- Policy tone is scored by **literal phrase matching with word boundaries**. Naive substring
+  matching is actively wrong here — "release", "increase" and "decrease" all contain "ease", so
+  an *increase* in rates would score as dovish.
+- When a headline contains no policy language, tone is reported as **"not stated in headlines"**
+  rather than defaulting to a neutral score. Central-bank RSS titles are often bare
+  ("Cook, Economic Outlook"); inventing a reading the text doesn't support would be fake precision.
+- If the data worker is unreachable the page shows an error rather than stale numbers.
+
+## Architecture
+
+```
+Cloudflare Worker (a-plus-desk-data)          GitHub Pages (this repo)
+  :00 cron -> market data  -> KV "snapshot"     index.html fetches the merged
+  :30 cron -> context      -> KV "context"      JSON on every page load
+  GET /   -> merged snapshot + context
+```
+
+The two cron passes are split deliberately: Cloudflare's free plan allows **50 subrequests per
+invocation** and the market pass alone uses 48 (22 instruments x 2 timeframes + 4 indices), so the
+central-bank and news fetches cannot share that invocation.
+
+Worker source lives in a sibling directory (`a-plus-desk-worker`), not in this repo.
+
+## Data sources
+
+| Layer | Source | Credentials |
+|---|---|---|
+| Prices, EMA/RSI/ATR, intraday bars | Yahoo Finance public chart endpoint | none |
+| Fed speeches + monetary press | federalreserve.gov RSS | none |
+| ECB releases | ecb.europa.eu RSS | none |
+| Bank of England | bankofengland.co.uk RSS | none |
+| Per-instrument headlines | Yahoo Finance search | none |
+| Congress/Senate disclosures | Financial Modeling Prep | **`FMP_API_KEY` worker secret** (optional) |
+
+Congressional trading is the one layer that needs a key — the free public S3 mirrors that used to
+serve STOCK Act filings now return 403. Without the key that layer is simply reported as disabled;
+everything else runs.
 
 Not investment advice — an algorithmic technical/risk scan for demonstration.

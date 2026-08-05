@@ -1,5 +1,6 @@
 <meta charset="utf-8">
-<title>A+ DESK — Hourly Multi-Agent Setup Engine</title>
+<title>A+ DESK — Multi-Agent Day-Trading Terminal</title>
+<script src="vendor/lightweight-charts.js"></script>
 <style>
   :root {
     --ink: #0B0E14;
@@ -17,49 +18,9 @@
     --bear: #FF5C7A;
     --bear-soft: rgba(255, 92, 122, 0.12);
     --watch: #FFD166;
-    --watch-soft: rgba(255, 209, 102, 0.12);
+    --info: #6BA8FF;
     --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Consolas, monospace;
     --sans: -apple-system, "Segoe UI", system-ui, sans-serif;
-  }
-
-  :root[data-theme="light"] {
-    --ink: #F2F4F8;
-    --panel: #FFFFFF;
-    --panel-raised: #FFFFFF;
-    --hairline: #D8DEE9;
-    --hairline-soft: #E6EAF1;
-    --ash: #5B6478;
-    --ash-dim: #8B93A4;
-    --paper: #131722;
-    --signal: #B5650A;
-    --signal-soft: rgba(181, 101, 10, 0.10);
-    --bull: #0F8F5F;
-    --bull-soft: rgba(15, 143, 95, 0.10);
-    --bear: #C22C48;
-    --bear-soft: rgba(194, 44, 72, 0.10);
-    --watch: #A6790A;
-    --watch-soft: rgba(166, 121, 10, 0.10);
-  }
-
-  @media (prefers-color-scheme: light) {
-    :root:not([data-theme="dark"]) {
-      --ink: #F2F4F8;
-      --panel: #FFFFFF;
-      --panel-raised: #FFFFFF;
-      --hairline: #D8DEE9;
-      --hairline-soft: #E6EAF1;
-      --ash: #5B6478;
-      --ash-dim: #8B93A4;
-      --paper: #131722;
-      --signal: #B5650A;
-      --signal-soft: rgba(181, 101, 10, 0.10);
-      --bull: #0F8F5F;
-      --bull-soft: rgba(15, 143, 95, 0.10);
-      --bear: #C22C48;
-      --bear-soft: rgba(194, 44, 72, 0.10);
-      --watch: #A6790A;
-      --watch-soft: rgba(166, 121, 10, 0.10);
-    }
   }
 
   * { box-sizing: border-box; }
@@ -69,394 +30,217 @@
     color: var(--paper);
     font-family: var(--sans);
     min-height: 100vh;
-    background-image:
-      repeating-linear-gradient(180deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 3px);
+    margin: 0;
+    background-image: repeating-linear-gradient(180deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 3px);
   }
 
   ::selection { background: var(--signal-soft); color: var(--paper); }
 
-  .desk {
-    max-width: 1180px;
-    margin: 0 auto;
-    padding: 20px 20px 48px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
+  .desk { max-width: 1440px; margin: 0 auto; padding: 18px 18px 56px; display: flex; flex-direction: column; gap: 14px; }
 
-  /* ---------- Header ---------- */
+  /* ---------- header ---------- */
   .header {
-    border: 1px solid var(--hairline);
-    background: var(--panel);
-    padding: 14px 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    flex-wrap: wrap;
+    border: 1px solid var(--hairline); background: var(--panel);
+    padding: 13px 18px; display: flex; align-items: center;
+    justify-content: space-between; gap: 18px; flex-wrap: wrap;
   }
-
   .brand { display: flex; align-items: baseline; gap: 10px; }
-  .brand .mark {
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: 15px;
-    letter-spacing: 0.06em;
-    color: var(--paper);
-  }
+  .brand .mark { font-family: var(--mono); font-weight: 700; font-size: 15px; letter-spacing: 0.06em; }
   .brand .mark span { color: var(--signal); }
-  .brand .tag {
-    font-family: var(--sans);
-    font-size: 12px;
-    color: var(--ash);
-  }
-
-  .status-strip { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
-
-  .clock {
-    font-family: var(--mono);
-    font-size: 13px;
-    color: var(--ash);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .clock b { color: var(--paper); font-variant-numeric: tabular-nums; font-weight: 600; }
-
+  .brand .tag { font-size: 11.5px; color: var(--ash); }
+  .status-strip { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; color: var(--ash); }
+  .status-strip b { color: var(--paper); font-variant-numeric: tabular-nums; font-weight: 600; }
   .pill {
-    font-family: var(--mono);
-    font-size: 10.5px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    padding: 3px 8px;
-    border: 1px solid var(--hairline);
-    text-transform: uppercase;
+    font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    padding: 3px 8px; border: 1px solid var(--hairline); text-transform: uppercase;
   }
   .pill.open { color: var(--bull); border-color: var(--bull); background: var(--bull-soft); }
   .pill.closed { color: var(--ash); }
+  .freshness .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; }
+  .freshness.live .dot { background: var(--bull); }
+  .freshness.stale .dot { background: var(--watch); }
+  .freshness.cold .dot { background: var(--bear); }
 
-  .countdown {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--ash);
-  }
-  .countdown b { color: var(--signal); font-variant-numeric: tabular-nums; }
-
-  /* ---------- Index strip ---------- */
-  .index-strip {
-    border: 1px solid var(--hairline);
-    background: var(--panel);
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-  }
-  .index-cell {
-    padding: 10px 16px;
-    border-right: 1px solid var(--hairline-soft);
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
+  /* ---------- index strip ---------- */
+  .index-strip { border: 1px solid var(--hairline); background: var(--panel); display: grid; grid-template-columns: repeat(4, 1fr); }
+  .index-cell { padding: 10px 16px; border-right: 1px solid var(--hairline-soft); display: flex; flex-direction: column; gap: 3px; }
   .index-cell:last-child { border-right: none; }
   .index-cell .sym { font-family: var(--mono); font-size: 11px; color: var(--ash); letter-spacing: 0.04em; }
   .index-cell .val { font-family: var(--mono); font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .index-cell .chg { font-family: var(--mono); font-size: 11.5px; font-variant-numeric: tabular-nums; }
-  .up { color: var(--bull); }
-  .down { color: var(--bear); }
+  .up { color: var(--bull); } .down { color: var(--bear); }
 
-  /* ---------- Main grid ---------- */
-  .grid {
-    display: grid;
-    grid-template-columns: 340px 1fr;
-    gap: 16px;
-    align-items: start;
-  }
-  @media (max-width: 860px) {
-    .grid { grid-template-columns: 1fr; }
-  }
+  /* ---------- layout ---------- */
+  .grid { display: grid; grid-template-columns: 360px 1fr; gap: 14px; align-items: start; }
+  @media (max-width: 1080px) { .grid { grid-template-columns: 1fr; } }
+  .col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 
   .section-label {
-    font-family: var(--mono);
-    font-size: 10.5px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ash-dim);
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--hairline-soft);
-    margin-bottom: 10px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ash-dim); padding-bottom: 7px; border-bottom: 1px solid var(--hairline-soft); margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
   }
+  .section-label .aux { letter-spacing: 0.04em; text-transform: none; color: var(--ash-dim); }
 
-  /* ---------- Agent pipeline ---------- */
-  .pipeline { display: flex; flex-direction: column; gap: 10px; }
-
-  .agent-card {
-    border: 1px solid var(--hairline);
-    background: var(--panel);
-    padding: 12px 14px;
-    position: relative;
-    transition: border-color 0.25s ease;
-  }
+  /* ---------- agent pipeline ---------- */
+  .agent-card { border: 1px solid var(--hairline); background: var(--panel); margin-bottom: 9px; transition: border-color .25s ease; }
   .agent-card.active { border-color: var(--signal); }
-  .agent-card.done-pass { border-color: var(--hairline); }
-
-  .agent-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .agent-id { display: flex; align-items: baseline; gap: 8px; }
+  .agent-head { padding: 11px 13px; display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; user-select: none; }
+  .agent-head:hover { background: rgba(255,255,255,0.02); }
+  .agent-head:focus-visible { outline: 2px solid var(--signal); outline-offset: -2px; }
+  .agent-id { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
   .agent-num { font-family: var(--mono); font-size: 11px; color: var(--ash-dim); }
-  .agent-role { font-family: var(--sans); font-size: 13.5px; font-weight: 650; }
-
+  .agent-role { font-size: 13px; font-weight: 650; }
+  .chev { font-family: var(--mono); font-size: 10px; color: var(--ash-dim); transition: transform .2s ease; display: inline-block; }
+  .agent-card.expanded .chev { transform: rotate(90deg); }
   .status-chip {
-    font-family: var(--mono);
-    font-size: 9.5px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 2px 7px;
-    border: 1px solid var(--hairline);
-    color: var(--ash-dim);
-    display: flex;
-    align-items: center;
-    gap: 5px;
+    font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+    padding: 2px 7px; border: 1px solid var(--hairline); color: var(--ash-dim); display: flex; align-items: center; gap: 5px; white-space: nowrap;
   }
   .status-chip .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ash-dim); flex: none; }
   .status-chip.scanning { color: var(--signal); border-color: var(--signal); }
   .status-chip.scanning .dot { background: var(--signal); animation: pulse 1.1s ease-in-out infinite; }
-  .status-chip.pass { color: var(--bull); border-color: var(--bull); }
-  .status-chip.pass .dot { background: var(--bull); }
-  .status-chip.flag { color: var(--watch); border-color: var(--watch); }
-  .status-chip.flag .dot { background: var(--watch); }
-  .status-chip.veto { color: var(--bear); border-color: var(--bear); }
-  .status-chip.veto .dot { background: var(--bear); }
+  .status-chip.pass { color: var(--bull); border-color: var(--bull); } .status-chip.pass .dot { background: var(--bull); }
+  .status-chip.flag { color: var(--watch); border-color: var(--watch); } .status-chip.flag .dot { background: var(--watch); }
+  .status-chip.veto { color: var(--bear); border-color: var(--bear); } .status-chip.veto .dot { background: var(--bear); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
 
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
-
-  .agent-body {
-    margin-top: 9px;
-    font-size: 12.5px;
-    line-height: 1.5;
-    color: var(--ash);
-    min-height: 18px;
-  }
-  .agent-body .line {
-    opacity: 0;
-    animation: reveal 0.4s ease forwards;
-  }
+  .agent-body { padding: 0 13px 12px; font-size: 12.5px; line-height: 1.55; color: var(--ash); }
+  .agent-body .line { opacity: 0; animation: reveal .4s ease forwards; }
   .agent-body .line + .line { margin-top: 5px; }
   .agent-body .verdict { color: var(--paper); font-weight: 600; }
   @keyframes reveal { to { opacity: 1; } }
-
   @media (prefers-reduced-motion: reduce) {
     .agent-body .line { animation: none; opacity: 1; }
     .status-chip.scanning .dot { animation: none; }
+    .chev { transition: none; }
   }
 
-  /* ---------- Setup card ---------- */
-  .setup-wrap { display: flex; flex-direction: column; gap: 16px; }
+  /* ---------- drill-down ---------- */
+  .drill { margin-top: 10px; border-top: 1px solid var(--hairline-soft); padding-top: 9px; display: none; }
+  .agent-card.expanded .drill { display: block; }
+  .drill-title { font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--ash-dim); margin: 9px 0 6px; }
+  .drill-title:first-child { margin-top: 0; }
+  .kv { display: grid; grid-template-columns: 1fr auto; gap: 3px 12px; font-family: var(--mono); font-size: 11.5px; }
+  .kv .k { color: var(--ash-dim); }
+  .kv .v { color: var(--paper); font-variant-numeric: tabular-nums; text-align: right; }
+  .rule { display: flex; gap: 8px; align-items: flex-start; font-size: 11.5px; padding: 3px 0; border-bottom: 1px dashed var(--hairline-soft); }
+  .rule:last-child { border-bottom: none; }
+  .rule .mark { font-family: var(--mono); font-weight: 700; flex: none; width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+  .rule.hit .mark { color: var(--bull); }
+  .rule.miss .mark { color: var(--bear); }
+  .rule.neutral .mark { color: var(--ash-dim); }
+  .rule .txt { color: var(--ash); }
 
-  .setup-card {
-    border: 1px solid var(--hairline);
-    background: var(--panel-raised);
-    padding: 20px 22px;
+  /* ---------- setup card ---------- */
+  .setup-card { border: 1px solid var(--hairline); background: var(--panel-raised); padding: 18px 20px; }
+  .setup-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .ticker-block { display: flex; align-items: baseline; gap: 11px; flex-wrap: wrap; }
+  .ticker-sym { font-family: var(--mono); font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+  .ticker-name { font-size: 12.5px; color: var(--ash); }
+  .dir-chip, .class-chip {
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: .06em;
+    padding: 2px 8px; border: 1px solid currentColor; align-self: center;
   }
-
-  .setup-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .ticker-block { display: flex; align-items: baseline; gap: 12px; }
-  .ticker-sym { font-family: var(--mono); font-size: 30px; font-weight: 700; letter-spacing: -0.01em; }
-  .ticker-name { font-size: 13px; color: var(--ash); }
-  .dir-chip {
-    font-family: var(--mono);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    padding: 2px 8px;
-    border: 1px solid currentColor;
-    align-self: center;
-  }
-  .dir-chip.long { color: var(--bull); }
-  .dir-chip.short { color: var(--bear); }
-  .class-chip {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 2px 7px;
-    border: 1px solid var(--hairline);
-    color: var(--ash-dim);
-    align-self: center;
-  }
-
-  .grade-badge {
-    font-family: var(--mono);
-    font-weight: 800;
-    font-size: 26px;
-    line-height: 1;
-    padding: 8px 16px;
-    border: 1.5px solid currentColor;
-    flex: none;
-  }
+  .dir-chip.long { color: var(--bull); } .dir-chip.short { color: var(--bear); }
+  .class-chip { border-color: var(--hairline); color: var(--ash-dim); font-weight: 400; text-transform: uppercase; font-size: 9.5px; }
+  .grade-badge { font-family: var(--mono); font-weight: 800; font-size: 25px; line-height: 1; padding: 8px 15px; border: 1.5px solid currentColor; flex: none; }
   .grade-badge.g-Aplus { color: var(--bull); background: var(--bull-soft); }
   .grade-badge.g-A { color: var(--bull); }
   .grade-badge.g-B { color: var(--watch); }
   .grade-badge.g-C { color: var(--ash); }
   .grade-badge.g-PASS { color: var(--bear); background: var(--bear-soft); }
-
-  .thesis {
-    margin-top: 14px;
-    font-size: 13.5px;
-    line-height: 1.6;
-    color: var(--paper);
-    max-width: 62ch;
-  }
-
-  .params-row {
-    margin-top: 16px;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    border-top: 1px solid var(--hairline-soft);
-    padding-top: 14px;
-  }
+  .thesis { margin-top: 13px; font-size: 13px; line-height: 1.6; color: var(--paper); max-width: 68ch; }
+  .params-row { margin-top: 15px; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--hairline-soft); padding-top: 13px; gap: 8px; }
   .param { display: flex; flex-direction: column; gap: 3px; }
-  .param .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ash-dim); }
-  .param .v { font-family: var(--mono); font-size: 16px; font-weight: 650; font-variant-numeric: tabular-nums; }
-  .param .v.bull { color: var(--bull); }
-  .param .v.bear { color: var(--bear); }
-
-  .confidence-row { margin-top: 14px; display: flex; align-items: center; gap: 10px; }
-  .confidence-row .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ash-dim); flex: none; }
+  .param .k { font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash-dim); }
+  .param .v { font-family: var(--mono); font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .param .v.bull { color: var(--bull); } .param .v.bear { color: var(--bear); }
+  .confidence-row { margin-top: 13px; display: flex; align-items: center; gap: 10px; }
+  .confidence-row .k { font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash-dim); flex: none; }
   .meter { flex: 1; height: 6px; background: var(--hairline-soft); position: relative; overflow: hidden; }
-  .meter i { position: absolute; inset: 0 auto 0 0; background: var(--signal); width: 0%; transition: width 0.9s cubic-bezier(.2,.7,.3,1); }
-  .confidence-row .pct { font-family: var(--mono); font-size: 12px; font-weight: 650; width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+  .meter i { position: absolute; inset: 0 auto 0 0; background: var(--signal); width: 0%; transition: width .9s cubic-bezier(.2,.7,.3,1); }
+  .confidence-row .pct { font-family: var(--mono); font-size: 12px; font-weight: 650; width: 32px; text-align: right; font-variant-numeric: tabular-nums; }
+  .setup-empty { font-family: var(--mono); font-size: 12.5px; color: var(--ash-dim); padding: 34px 4px; text-align: center; line-height: 1.6; }
 
-  .setup-empty {
-    font-family: var(--mono);
-    font-size: 12.5px;
-    color: var(--ash-dim);
-    padding: 30px 4px;
-    text-align: center;
-  }
+  /* ---------- chart ---------- */
+  .chart-wrap { border: 1px solid var(--hairline); background: var(--panel); }
+  .chart-head { padding: 9px 14px; border-bottom: 1px solid var(--hairline-soft); display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .chart-head .t { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ash-dim); }
+  .chart-head .legend { font-family: var(--mono); font-size: 10.5px; display: flex; gap: 13px; color: var(--ash-dim); }
+  .chart-head .legend i { font-style: normal; display: inline-flex; align-items: center; gap: 4px; }
+  .chart-head .legend .sw { width: 14px; height: 2px; display: inline-block; }
+  #chart { height: 260px; width: 100%; }
+  .chart-empty { padding: 56px 10px; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--ash-dim); }
 
-  .cta-row { margin-top: 18px; display: flex; align-items: center; gap: 12px; }
+  /* ---------- controls ---------- */
+  .cta-row { margin-top: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .run-btn {
-    font-family: var(--mono);
-    font-size: 11.5px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    background: var(--signal);
-    color: #1a1204;
-    border: none;
-    padding: 9px 16px;
-    cursor: pointer;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    background: var(--signal); color: #1a1204; border: none; padding: 9px 16px; cursor: pointer;
   }
   .run-btn:hover { filter: brightness(1.08); }
-  .run-btn:disabled { opacity: 0.5; cursor: default; }
+  .run-btn:disabled { opacity: .5; cursor: default; }
   .run-btn:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
-
   .ticker-select {
-    font-family: var(--mono);
-    font-size: 11.5px;
-    font-weight: 650;
-    letter-spacing: 0.02em;
-    background: var(--panel);
-    color: var(--paper);
-    border: 1px solid var(--hairline);
-    padding: 9px 10px;
-    cursor: pointer;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 650; background: var(--panel);
+    color: var(--paper); border: 1px solid var(--hairline); padding: 9px 10px; cursor: pointer;
   }
   .ticker-select:focus-visible { outline: 2px solid var(--signal); outline-offset: 1px; }
   .cta-note { font-family: var(--mono); font-size: 11px; color: var(--ash-dim); }
 
-  /* ---------- History ---------- */
+  /* ---------- officials / news ---------- */
+  .panel { border: 1px solid var(--hairline); background: var(--panel); }
+  .off-row { padding: 10px 14px; border-bottom: 1px solid var(--hairline-soft); }
+  .off-row:last-child { border-bottom: none; }
+  .off-top { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+  .bank-chip { font-family: var(--mono); font-size: 9.5px; font-weight: 700; letter-spacing: .06em; padding: 1px 6px; border: 1px solid var(--hairline); color: var(--info); }
+  .off-name { font-size: 12.5px; font-weight: 650; }
+  .off-role { font-size: 11px; color: var(--ash-dim); }
+  .weight-dots { display: inline-flex; gap: 2px; align-items: center; }
+  .weight-dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--signal); display: block; }
+  .weight-dots i.off { background: var(--hairline); }
+  .off-title { font-size: 11.5px; color: var(--ash); margin-top: 3px; line-height: 1.45; }
+  .off-title a, .news-txt a { color: var(--ash); text-decoration: none; border-bottom: 1px dotted var(--hairline); }
+  .off-title a:hover, .news-txt a:hover { color: var(--paper); }
+  .off-empty { padding: 14px; font-family: var(--mono); font-size: 11.5px; color: var(--ash-dim); line-height: 1.6; }
+  .news-row { padding: 8px 14px; border-bottom: 1px solid var(--hairline-soft); display: flex; gap: 10px; align-items: flex-start; }
+  .news-row:last-child { border-bottom: none; }
+  .sent-tag {
+    font-family: var(--mono); font-size: 9px; font-weight: 700; padding: 1px 5px; flex: none;
+    border: 1px solid currentColor; margin-top: 1px; min-width: 26px; text-align: center;
+  }
+  .sent-tag.pos { color: var(--bull); } .sent-tag.neg { color: var(--bear); } .sent-tag.neu { color: var(--ash-dim); }
+  .news-txt { font-size: 11.5px; line-height: 1.45; color: var(--ash); }
+  .news-src { color: var(--ash-dim); font-size: 10.5px; }
+
+  /* ---------- history ---------- */
+  .winrate-strip { display: flex; align-items: baseline; gap: 14px; margin-bottom: 10px; font-family: var(--mono); }
+  .winrate-strip .pct { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .winrate-strip .pct.empty { color: var(--ash-dim); font-size: 13px; font-weight: 500; }
+  .winrate-strip .breakdown { font-size: 11px; color: var(--ash-dim); }
+  .winrate-strip b.w { color: var(--bull); } .winrate-strip b.l { color: var(--bear); } .winrate-strip b.o { color: var(--watch); }
   .history-table { border: 1px solid var(--hairline); background: var(--panel); }
   .history-row {
-    display: grid;
-    grid-template-columns: 26px 62px 56px 1fr 46px 46px 58px;
-    gap: 8px;
-    padding: 9px 14px;
-    border-bottom: 1px solid var(--hairline-soft);
-    font-size: 12px;
-    align-items: center;
+    display: grid; grid-template-columns: 26px 56px 64px 1fr 46px 44px 54px; gap: 8px;
+    padding: 8px 14px; border-bottom: 1px solid var(--hairline-soft); font-size: 11.5px; align-items: center;
   }
   .history-row:last-child { border-bottom: none; }
-  .history-row.head {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ash-dim);
-  }
+  .history-row.head { font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ash-dim); }
   .history-row .t { font-family: var(--mono); color: var(--ash); font-variant-numeric: tabular-nums; }
   .history-row .sym { font-family: var(--mono); font-weight: 650; }
   .history-row .note { color: var(--ash); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .history-row .grade { font-family: var(--mono); font-weight: 700; text-align: right; }
   .history-row .rr { font-family: var(--mono); color: var(--ash); text-align: right; font-variant-numeric: tabular-nums; }
-  .history-empty { padding: 16px 14px; font-family: var(--mono); font-size: 12px; color: var(--ash-dim); }
+  .history-empty { padding: 15px 14px; font-family: var(--mono); font-size: 11.5px; color: var(--ash-dim); }
+  .taken-check { width: 14px; height: 14px; accent-color: var(--signal); cursor: pointer; margin: 0; }
+  .taken-check:disabled { opacity: .25; cursor: default; }
+  .outcome-badge { font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; text-align: right; }
+  .outcome-badge.win { color: var(--bull); } .outcome-badge.loss { color: var(--bear); }
+  .outcome-badge.open { color: var(--watch); } .outcome-badge.na { color: var(--ash-dim); }
 
-  .taken-check {
-    width: 14px;
-    height: 14px;
-    accent-color: var(--signal);
-    cursor: pointer;
-    margin: 0;
-  }
-  .taken-check:disabled { opacity: 0.25; cursor: default; }
-
-  .outcome-badge {
-    font-family: var(--mono);
-    font-size: 9.5px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    text-align: right;
-  }
-  .outcome-badge.win { color: var(--bull); }
-  .outcome-badge.loss { color: var(--bear); }
-  .outcome-badge.open { color: var(--watch); }
-  .outcome-badge.na { color: var(--ash-dim); }
-
-  .winrate-strip {
-    display: flex;
-    align-items: baseline;
-    gap: 14px;
-    margin-bottom: 10px;
-    font-family: var(--mono);
-  }
-  .winrate-strip .pct { font-size: 20px; font-weight: 700; color: var(--paper); font-variant-numeric: tabular-nums; }
-  .winrate-strip .pct.empty { color: var(--ash-dim); font-size: 13px; font-weight: 500; }
-  .winrate-strip .breakdown { font-size: 11px; color: var(--ash-dim); }
-  .winrate-strip .breakdown b.w { color: var(--bull); font-weight: 700; }
-  .winrate-strip .breakdown b.l { color: var(--bear); font-weight: 700; }
-  .winrate-strip .breakdown b.o { color: var(--watch); font-weight: 700; }
-
-  /* ---------- Footer / disclaimer ---------- */
-  .disclaimer {
-    border: 1px solid var(--hairline);
-    background: var(--panel);
-    padding: 10px 14px;
-    font-size: 11.5px;
-    color: var(--ash-dim);
-    line-height: 1.5;
-  }
+  .disclaimer { border: 1px solid var(--hairline); background: var(--panel); padding: 10px 14px; font-size: 11px; color: var(--ash-dim); line-height: 1.55; }
   .disclaimer b { color: var(--ash); }
-
-  .roadmap {
-    border: 1px dashed var(--hairline);
-    padding: 12px 14px;
-    font-size: 12px;
-    color: var(--ash);
-    line-height: 1.6;
-  }
-  .roadmap b { color: var(--paper); font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
 </style>
 
 <div class="desk">
@@ -464,13 +248,14 @@
   <div class="header">
     <div class="brand">
       <div class="mark">A<span>+</span>&nbsp;DESK</div>
-      <div class="tag">Hourly Multi-Agent Setup Engine · Equities · Futures · Forex · Commodities</div>
+      <div class="tag">Multi-Agent Day-Trading Terminal · Equities · Futures · Forex · Commodities</div>
     </div>
     <div class="status-strip">
-      <span id="marketPill" class="pill closed">Closed</span>
-      <span class="clock">NY <b id="nyClock">--:--:--</b></span>
-      <span class="countdown" id="countdownWrap">Next scan in <b id="countdown">--:--</b></span>
-      <span class="countdown" id="weekendMsg" style="display:none;">Futures/FX session closed for the weekend</span>
+      <span id="marketPill" class="pill closed">NYSE Closed</span>
+      <span>NY <b id="nyClock">--:--:--</b></span>
+      <span id="countdownWrap">Next scan <b id="countdown">--:--</b></span>
+      <span id="weekendMsg" style="display:none;">Futures/FX closed for weekend</span>
+      <span class="freshness cold" id="freshness"><span class="dot"></span><span id="freshTxt">connecting…</span></span>
     </div>
   </div>
 
@@ -478,31 +263,54 @@
 
   <div class="grid">
 
-    <div class="pipeline-wrap">
-      <div class="section-label">Agent Pipeline</div>
-      <div class="pipeline" id="pipeline"></div>
-    </div>
-
-    <div class="setup-wrap">
+    <div class="col">
       <div>
-        <div class="section-label">Current Setup</div>
-        <div class="setup-card" id="setupCard">
-          <div class="setup-empty">No scan run yet this hour — press RUN SCAN or wait for the top of the hour.</div>
-        </div>
-        <div class="cta-row">
-          <select class="ticker-select" id="tickerSelect" aria-label="Ticker to scan">
-            <option value="auto">Auto · top ranked</option>
-          </select>
-          <button class="run-btn" id="runBtn">Run Scan Now</button>
-        </div>
-        <div class="cta-row" style="margin-top: 8px;">
-          <span class="cta-note" id="ctaNote">Real prices/indicators — cycles through ranked real candidates</span>
-        </div>
+        <div class="section-label"><span>Agent Pipeline</span><span class="aux">click a row to expand</span></div>
+        <div id="pipeline"></div>
       </div>
 
       <div>
-        <div class="section-label">Hourly Log</div>
-        <div class="winrate-strip" id="winrateStrip">
+        <div class="section-label"><span>Policy Makers</span><span class="aux" id="offAux">central bank feeds</span></div>
+        <div class="panel" id="officials"><div class="off-empty">Loading official activity…</div></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div>
+        <div class="section-label"><span>Current Setup</span></div>
+        <div class="setup-card" id="setupCard">
+          <div class="setup-empty">No scan run yet — press RUN SCAN, or wait for the top of the hour.</div>
+        </div>
+        <div class="cta-row">
+          <select class="ticker-select" id="tickerSelect" aria-label="Instrument to scan">
+            <option value="auto">Auto · top ranked</option>
+          </select>
+          <button class="run-btn" id="runBtn">Run Scan Now</button>
+          <span class="cta-note" id="ctaNote">Real prices · intraday sizing · 1–3 R:R only</span>
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <div class="chart-head">
+          <span class="t" id="chartTitle">15-minute chart</span>
+          <span class="legend">
+            <i><span class="sw" style="background:var(--signal)"></span>entry</i>
+            <i><span class="sw" style="background:var(--bear)"></span>stop</i>
+            <i><span class="sw" style="background:var(--bull)"></span>target</i>
+          </span>
+        </div>
+        <div id="chart" style="display:none;"></div>
+        <div class="chart-empty" id="chartEmpty">Run a scan to plot the setup.</div>
+      </div>
+
+      <div>
+        <div class="section-label"><span>Headlines</span><span class="aux" id="newsAux">for the scanned instrument</span></div>
+        <div class="panel" id="newsPanel"><div class="off-empty">Run a scan to load headlines.</div></div>
+      </div>
+
+      <div>
+        <div class="section-label"><span>Hourly Log</span></div>
+        <div class="winrate-strip">
           <span class="pct empty" id="winratePct">No trades ticked yet</span>
           <span class="breakdown" id="winrateBreakdown"></span>
         </div>
@@ -512,14 +320,14 @@
           </div>
           <div id="historyBody"><div class="history-empty">No completed scans yet.</div></div>
         </div>
-        <div class="cta-note" style="margin-top: 8px;">Tick a real (non-PASS) setup you actually took — its result auto-resolves against real prices on the next hourly refresh, and rolls into your win rate above.</div>
+        <div class="cta-note" style="margin-top:8px;">Tick a real (non-PASS) setup you took — it auto-resolves against real prices on the next refresh.</div>
       </div>
     </div>
 
   </div>
 
   <div class="disclaimer">
-    <b>Real data.</b> Prices, daily EMA/RSI (trend bias), and intraday 15-min ATR + session high/low (stop/target sizing) are genuine, pulled from a live market data source across equities, index futures, commodities, and forex — data timestamped <span id="snapTime">—</span>. All grading is computed from that real math; nothing here is fabricated. Stops and targets are sized for day trading, not swing holds. The Risk Manager only clears trades in a 1–3 reward-to-risk band; everything else is graded PASS. The page pulls fresh data on load from a worker that re-fetches hourly, so opening it gives you current data; if that worker is unreachable it falls back to the snapshot baked in at publish time (the label after the timestamp tells you which you're seeing). Your ticked trades and win rate are saved in this browser's local storage only — they won't follow you to another device or browser, and clearing site data erases them. Nothing on this page is investment advice.
+    <b>Real data.</b> Prices, daily EMA/RSI (trend bias) and intraday 15-min ATR + session high/low (stop/target sizing) come from a live market feed; policy-maker activity comes from official Federal Reserve, ECB and Bank of England feeds; headlines from a public news feed. A worker refreshes market data and context on separate hourly passes, and this page pulls fresh on every load — <span id="snapTime">—</span>. Agent grading is <b>deterministic</b>: fixed, auditable rules you can expand and inspect, not a language model's opinion. Policy tone is scored by literal phrase matching and reported as unavailable when a headline contains no policy language — it is deliberately not inferred. Stops and targets are sized for day trading, not swing holds; only 1–3 reward-to-risk setups clear the Risk Manager. Ticked trades and win rate live in this browser's local storage only. Nothing here is investment advice.
   </div>
 
 </div>
@@ -528,310 +336,291 @@
 (function () {
   "use strict";
 
-  // Real snapshot: EOD/latest bars pulled from a live public quote feed.
-  // Every price, EMA/RSI/ATR figure below is computed from that real data — see disclaimer.
-  // SNAPSHOT_START — replaced verbatim by update_snapshot.py on each scheduled refresh, do not hand-edit the region below.
-  var REAL_SNAPSHOT = {
-  "fetched_utc": "2026-08-05T00:22:01.998143Z",
-  "watchlist": [
-    { "symbol": "NVDA", "name": "NVIDIA Corp", "assetClass": "Equity", "sector": "Semis", "decimals": 2, "last": 211.94, "chg_pct": 2.56, "ema21": 203.38, "ema50": 203.8, "rsi14": 56.8, "atrIntraday": 0.66, "vol_ratio": 1.01, "sessionHi": 213.06, "sessionLo": 209.05, "exch_time": 1785873600 },
-    { "symbol": "AAPL", "name": "Apple Inc", "assetClass": "Equity", "sector": "Hardware", "decimals": 2, "last": 309.38, "chg_pct": 1.96, "ema21": 319.43, "ema50": 309.72, "rsi14": 44.1, "atrIntraday": 1.01, "vol_ratio": 1.21, "sessionHi": 310.42, "sessionLo": 301.32, "exch_time": 1785873601 },
-    { "symbol": "MSFT", "name": "Microsoft Corp", "assetClass": "Equity", "sector": "Software", "decimals": 2, "last": 492.81, "chg_pct": 1.06, "ema21": 417.09, "ema50": 405.72, "rsi14": 78.2, "atrIntraday": 1.38, "vol_ratio": 1.27, "sessionHi": 499.44, "sessionLo": 479.17, "exch_time": 1785873601 },
-    { "symbol": "TSLA", "name": "Tesla Inc", "assetClass": "Equity", "sector": "Auto / EV", "decimals": 2, "last": 327.35, "chg_pct": 1.64, "ema21": 347.33, "ema50": 372.42, "rsi14": 38.7, "atrIntraday": 1.18, "vol_ratio": 0.82, "sessionHi": 329.57, "sessionLo": 320.79, "exch_time": 1785873601 },
-    { "symbol": "AMD", "name": "Advanced Micro Devices", "assetClass": "Equity", "sector": "Semis", "decimals": 2, "last": 518.58, "chg_pct": 7.0, "ema21": 504.1, "ema50": 487.24, "rsi14": 52.3, "atrIntraday": 3.34, "vol_ratio": 1.33, "sessionHi": 530.13, "sessionLo": 502.2, "exch_time": 1785873601 },
-    { "symbol": "META", "name": "Meta Platforms", "assetClass": "Equity", "sector": "Internet", "decimals": 2, "last": 587.94, "chg_pct": -0.39, "ema21": 600.21, "ema50": 605.67, "rsi14": 46.4, "atrIntraday": 2.35, "vol_ratio": 0.87, "sessionHi": 592.79, "sessionLo": 578.25, "exch_time": 1785873600 },
-    { "symbol": "JPM", "name": "JPMorgan Chase", "assetClass": "Equity", "sector": "Financials", "decimals": 2, "last": 357.52, "chg_pct": 1.38, "ema21": 345.86, "ema50": 333.93, "rsi14": 65.4, "atrIntraday": 0.76, "vol_ratio": 0.91, "sessionHi": 363.0, "sessionLo": 353.87, "exch_time": 1785873602 },
-    { "symbol": "XOM", "name": "Exxon Mobil", "assetClass": "Equity", "sector": "Energy", "decimals": 2, "last": 153.96, "chg_pct": -0.71, "ema21": 150.89, "ema50": 148.68, "rsi14": 57.0, "atrIntraday": 0.42, "vol_ratio": 0.96, "sessionHi": 154.84, "sessionLo": 149.09, "exch_time": 1785873808 },
-    { "symbol": "ES", "name": "E-mini S&P 500 Future", "assetClass": "Index Future", "sector": "Index Future", "decimals": 2, "last": 7779.5, "chg_pct": 1.98, "ema21": 7530.42, "ema50": 7469.08, "rsi14": 66.2, "atrIntraday": 6.02, "vol_ratio": 0.01, "sessionHi": 7786.0, "sessionLo": 7631.75, "exch_time": 1785888722 },
-    { "symbol": "NQ", "name": "E-mini Nasdaq 100 Future", "assetClass": "Index Future", "sector": "Index Future", "decimals": 2, "last": 29851.75, "chg_pct": 3.32, "ema21": 28925.06, "ema50": 28955.71, "rsi14": 57.4, "atrIntraday": 50.66, "vol_ratio": 0.03, "sessionHi": 29956.5, "sessionLo": 28968.5, "exch_time": 1785888722 },
-    { "symbol": "YM", "name": "E-mini Dow Future", "assetClass": "Index Future", "sector": "Index Future", "decimals": 2, "last": 54366.0, "chg_pct": 1.93, "ema21": 52634.66, "ema50": 51941.97, "rsi14": 67.0, "atrIntraday": 33.57, "vol_ratio": 0.01, "sessionHi": 54423.0, "sessionLo": 53267.0, "exch_time": 1785888715 },
-    { "symbol": "RTY", "name": "E-mini Russell 2000 Future", "assetClass": "Index Future", "sector": "Index Future", "decimals": 2, "last": 3051.3, "chg_pct": 2.07, "ema21": 2973.41, "ema50": 2939.67, "rsi14": 62.7, "atrIntraday": 2.14, "vol_ratio": 0.01, "sessionHi": 3053.9, "sessionLo": 2986.1, "exch_time": 1785888719 },
-    { "symbol": "GC", "name": "Gold Future", "assetClass": "Commodity", "sector": "Metals", "decimals": 2, "last": 4128.3, "chg_pct": 2.35, "ema21": 4081.99, "ema50": 4196.37, "rsi14": 51.8, "atrIntraday": 4.69, "vol_ratio": 1.02, "sessionHi": 4163.8, "sessionLo": 4101.4, "exch_time": 1785888709 },
-    { "symbol": "SI", "name": "Silver Future", "assetClass": "Commodity", "sector": "Metals", "decimals": 2, "last": 59.66, "chg_pct": 3.45, "ema21": 59.07, "ema50": 63.11, "rsi14": 49.4, "atrIntraday": 0.07, "vol_ratio": 1.3, "sessionHi": 60.28, "sessionLo": 58.78, "exch_time": 1785888685 },
-    { "symbol": "CL", "name": "WTI Crude Oil Future", "assetClass": "Commodity", "sector": "Energy", "decimals": 2, "last": 75.26, "chg_pct": -6.32, "ema21": 81.11, "ema50": 82.48, "rsi14": 40.5, "atrIntraday": 0.28, "vol_ratio": 0.02, "sessionHi": 82.33, "sessionLo": 74.3, "exch_time": 1785888716 },
-    { "symbol": "NG", "name": "Natural Gas Future", "assetClass": "Commodity", "sector": "Energy", "decimals": 3, "last": 2.689, "chg_pct": -3.31, "ema21": 2.867, "ema50": 2.958, "rsi14": 35.4, "atrIntraday": 0.004, "vol_ratio": 0.01, "sessionHi": 2.785, "sessionLo": 2.659, "exch_time": 1785888721 },
-    { "symbol": "HG", "name": "Copper Future", "assetClass": "Commodity", "sector": "Metals", "decimals": 4, "last": 6.6235, "chg_pct": 1.68, "ema21": 6.3617, "ema50": 6.2842, "rsi14": 64.5, "atrIntraday": 0.0053, "vol_ratio": 0.47, "sessionHi": 6.6885, "sessionLo": 6.5835, "exch_time": 1785888722 },
-    { "symbol": "EURUSD", "name": "Euro / US Dollar", "assetClass": "Forex", "sector": "Forex", "decimals": 4, "last": 1.1537, "chg_pct": 0.26, "ema21": 1.1456, "ema50": 1.1487, "rsi14": 59.7, "atrIntraday": 0.0002, "vol_ratio": null, "sessionHi": 1.1538, "sessionLo": 1.1533, "exch_time": 1785889313 },
-    { "symbol": "GBPUSD", "name": "British Pound / US Dollar", "assetClass": "Forex", "sector": "Forex", "decimals": 4, "last": 1.3454, "chg_pct": 0.2, "ema21": 1.3391, "ema50": 1.3386, "rsi14": 55.2, "atrIntraday": 0.0003, "vol_ratio": null, "sessionHi": 1.3454, "sessionLo": 1.3448, "exch_time": 1785889313 },
-    { "symbol": "USDJPY", "name": "US Dollar / Japanese Yen", "assetClass": "Forex", "sector": "Forex", "decimals": 3, "last": 157.63, "chg_pct": 0.06, "ema21": 161.261, "ema50": 161.071, "rsi14": 25.1, "atrIntraday": 0.082, "vol_ratio": null, "sessionHi": 157.809, "sessionLo": 157.619, "exch_time": 1785889326 },
-    { "symbol": "AUDUSD", "name": "Australian Dollar / US Dollar", "assetClass": "Forex", "sector": "Forex", "decimals": 4, "last": 0.7053, "chg_pct": 0.79, "ema21": 0.6993, "ema50": 0.7009, "rsi14": 59.4, "atrIntraday": 0.0002, "vol_ratio": null, "sessionHi": 0.7053, "sessionLo": 0.7048, "exch_time": 1785889313 },
-    { "symbol": "USDCAD", "name": "US Dollar / Canadian Dollar", "assetClass": "Forex", "sector": "Forex", "decimals": 4, "last": 1.4064, "chg_pct": 0.13, "ema21": 1.4076, "ema50": 1.4034, "rsi14": 50.1, "atrIntraday": 0.0006, "vol_ratio": null, "sessionHi": 1.4069, "sessionLo": 1.4059, "exch_time": 1785889327 }
-  ],
-  "indices": [
-    { "label": "SPX", "last": 7736.52, "chg_pct": 4.14 },
-    { "label": "NDX", "last": 29733.16, "chg_pct": 7.1 },
-    { "label": "DJI", "last": 54085.88, "chg_pct": 2.54 },
-    { "label": "VIX", "last": 16.5, "chg_pct": -20.14 }
-  ]
-  };
-  // SNAPSHOT_END
-
-  // The snapshot above is a build-time fallback. On load we try the data worker,
-  // which re-fetches real market data hourly on a Cloudflare cron, so an open page
-  // shows current data rather than whatever was baked in at publish time.
   var DATA_WORKER_URL = "https://a-plus-desk-data.terfatsen.workers.dev/";
-  var dataSourceLabel = "build-time snapshot";
+  var SNAP = null, CTX = null;
 
-  function boot() {
-    var done = false;
-    function go() {
-      if (done) return;
-      done = true;
-      main();
-    }
-    // Never let a slow/blocked worker keep the desk from rendering.
-    var timer = setTimeout(go, 4000);
-    try {
-      fetch(DATA_WORKER_URL, { cache: "no-store" })
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (live) {
-          if (live && live.watchlist && live.watchlist.length && live.fetched_utc) {
-            REAL_SNAPSHOT = live;
-            dataSourceLabel = "live";
-          }
-          clearTimeout(timer);
-          go();
-        })
-        .catch(function () { clearTimeout(timer); go(); });
-    } catch (e) {
-      clearTimeout(timer);
-      go();
-    }
-  }
-
-  function main() {
-
-  function fmt2(n) { return n.toFixed(2); }
-  function fmtP(n, dec) { return n.toFixed(dec == null ? 2 : dec); }
+  /* ---------------- formatting / safety ---------------- */
+  function fmt2(n) { return Number(n).toFixed(2); }
+  function fmtP(n, dec) { return Number(n).toFixed(dec == null ? 2 : dec); }
   function sign(n) { return (n >= 0 ? "+" : "") + fmt2(n); }
-
-  // --- Real technical scoring: derived purely from the snapshot's EMA/RSI/ATR/volume/range fields ---
-  function scoreLong(x) {
-    var s = 50;
-    s += x.last > x.ema21 ? 12 : -10;
-    s += x.ema21 > x.ema50 ? 10 : -8;
-    if (x.rsi14 >= 50 && x.rsi14 <= 70) s += 12;
-    else if (x.rsi14 < 35) s += 8;
-    else if (x.rsi14 > 75) s -= 8;
-    if (x.vol_ratio > 1) s += 8;
-    var distToHi = (x.sessionHi - x.last) / x.last * 100;
-    if (distToHi >= 0 && distToHi <= 2) s += 10;
-    return Math.max(5, Math.min(97, Math.round(s)));
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
+  // Feed-supplied links are untrusted: allow only http(s), never javascript:.
+  function safeUrl(u) { return u && /^https?:\/\//i.test(u) ? u : null; }
+
+  /* ---------------- deterministic scoring ----------------
+     Each rule reports its own contribution so the UI can show the whole
+     derivation rather than only a final number. */
+  function scoreLong(x) {
+    var rules = [], s = 50;
+    rules.push({ txt: "Base score", d: 50, hit: null });
+    var r1 = x.last > x.ema21 ? 12 : -10;
+    s += r1; rules.push({ txt: "Price " + (r1 > 0 ? "above" : "below") + " 21EMA (" + fmtP(x.ema21, x.decimals) + ")", d: r1, hit: r1 > 0 });
+    var r2 = x.ema21 > x.ema50 ? 10 : -8;
+    s += r2; rules.push({ txt: "21EMA " + (r2 > 0 ? "above" : "below") + " 50EMA (" + fmtP(x.ema50, x.decimals) + ")", d: r2, hit: r2 > 0 });
+    var r3 = 0, t3;
+    if (x.rsi14 >= 50 && x.rsi14 <= 70) { r3 = 12; t3 = "RSI " + x.rsi14 + " in bullish 50–70 band"; }
+    else if (x.rsi14 < 35) { r3 = 8; t3 = "RSI " + x.rsi14 + " oversold (<35) — reversal candidate"; }
+    else if (x.rsi14 > 75) { r3 = -8; t3 = "RSI " + x.rsi14 + " overbought (>75)"; }
+    else { t3 = "RSI " + x.rsi14 + " outside scoring bands"; }
+    s += r3; rules.push({ txt: t3, d: r3, hit: r3 > 0 ? true : (r3 < 0 ? false : null) });
+    var r4 = (x.vol_ratio && x.vol_ratio > 1) ? 8 : 0;
+    s += r4; rules.push({ txt: x.vol_ratio == null ? "No exchange volume (spot FX)" : "Volume " + x.vol_ratio + "x 20-day average", d: r4, hit: r4 > 0 ? true : null });
+    var dh = (x.sessionHi - x.last) / x.last * 100;
+    var r5 = (dh >= 0 && dh <= 2) ? 10 : 0;
+    s += r5; rules.push({ txt: fmt2(dh) + "% below session high — " + (r5 ? "breakout proximity" : "not near breakout"), d: r5, hit: r5 > 0 ? true : null });
+    return { score: Math.max(5, Math.min(97, Math.round(s))), rules: rules };
+  }
+
   function scoreShort(x) {
-    var s = 50;
-    s += x.last < x.ema21 ? 12 : -10;
-    s += x.ema21 < x.ema50 ? 10 : -8;
-    if (x.rsi14 <= 50 && x.rsi14 >= 30) s += 12;
-    else if (x.rsi14 > 65) s += 8;
-    else if (x.rsi14 < 25) s -= 8;
-    if (x.vol_ratio > 1) s += 8;
-    var distToLo = (x.last - x.sessionLo) / x.last * 100;
-    if (distToLo >= 0 && distToLo <= 2) s += 10;
-    return Math.max(5, Math.min(97, Math.round(s)));
+    var rules = [], s = 50;
+    rules.push({ txt: "Base score", d: 50, hit: null });
+    var r1 = x.last < x.ema21 ? 12 : -10;
+    s += r1; rules.push({ txt: "Price " + (r1 > 0 ? "below" : "above") + " 21EMA (" + fmtP(x.ema21, x.decimals) + ")", d: r1, hit: r1 > 0 });
+    var r2 = x.ema21 < x.ema50 ? 10 : -8;
+    s += r2; rules.push({ txt: "21EMA " + (r2 > 0 ? "below" : "above") + " 50EMA (" + fmtP(x.ema50, x.decimals) + ")", d: r2, hit: r2 > 0 });
+    var r3 = 0, t3;
+    if (x.rsi14 <= 50 && x.rsi14 >= 30) { r3 = 12; t3 = "RSI " + x.rsi14 + " in bearish 30–50 band"; }
+    else if (x.rsi14 > 65) { r3 = 8; t3 = "RSI " + x.rsi14 + " overbought (>65) — fade candidate"; }
+    else if (x.rsi14 < 25) { r3 = -8; t3 = "RSI " + x.rsi14 + " deeply oversold (<25)"; }
+    else { t3 = "RSI " + x.rsi14 + " outside scoring bands"; }
+    s += r3; rules.push({ txt: t3, d: r3, hit: r3 > 0 ? true : (r3 < 0 ? false : null) });
+    var r4 = (x.vol_ratio && x.vol_ratio > 1) ? 8 : 0;
+    s += r4; rules.push({ txt: x.vol_ratio == null ? "No exchange volume (spot FX)" : "Volume " + x.vol_ratio + "x 20-day average", d: r4, hit: r4 > 0 ? true : null });
+    var dl = (x.last - x.sessionLo) / x.last * 100;
+    var r5 = (dl >= 0 && dl <= 2) ? 10 : 0;
+    s += r5; rules.push({ txt: fmt2(dl) + "% above session low — " + (r5 ? "breakdown proximity" : "not near breakdown"), d: r5, hit: r5 > 0 ? true : null });
+    return { score: Math.max(5, Math.min(97, Math.round(s))), rules: rules };
+  }
+
+  function usable(x) {
+    return x && !x.error && x.ema21 != null && x.ema50 != null && x.rsi14 != null
+      && x.atrIntraday != null && x.sessionHi != null && x.sessionLo != null;
   }
 
   function rankCandidates() {
     var list = [];
-    REAL_SNAPSHOT.watchlist.forEach(function (x) {
-      if (x.error || x.ema21 == null || x.ema50 == null || x.rsi14 == null) return;
-      if (x.atrIntraday == null || x.sessionHi == null || x.sessionLo == null) return;
-      var ls = scoreLong(x), ss = scoreShort(x);
-      if (ls >= ss) list.push({ x: x, dir: "long", score: ls });
-      else list.push({ x: x, dir: "short", score: ss });
+    (SNAP.watchlist || []).forEach(function (x) {
+      if (!usable(x)) return;
+      var L = scoreLong(x), S = scoreShort(x);
+      var p = L.score >= S.score ? { dir: "long", r: L } : { dir: "short", r: S };
+      list.push({ x: x, dir: p.dir, score: p.r.score, rules: p.r.rules });
     });
     list.sort(function (a, b) { return b.score - a.score; });
     return list;
   }
-  var CANDIDATES = rankCandidates();
-  var candidateIdx = 0;
 
-  var CANDIDATES_BY_SYMBOL = {};
-  CANDIDATES.forEach(function (c) { CANDIDATES_BY_SYMBOL[c.x.symbol] = c; });
-
-  var tickerSelect = document.getElementById("tickerSelect");
-  var ASSET_CLASS_ORDER = ["Equity", "Index Future", "Commodity", "Forex"];
-  ASSET_CLASS_ORDER.forEach(function (cls) {
-    var members = REAL_SNAPSHOT.watchlist.filter(function (x) { return x.assetClass === cls && CANDIDATES_BY_SYMBOL[x.symbol]; });
-    if (!members.length) return;
-    var group = document.createElement("optgroup");
-    group.label = cls;
-    members.forEach(function (x) {
-      var opt = document.createElement("option");
-      opt.value = x.symbol;
-      opt.textContent = x.symbol + " — " + x.name;
-      group.appendChild(opt);
+  /* ---------------- context lookups ---------------- */
+  function vixInfo() {
+    var v = (SNAP.indices || []).filter(function (i) { return i.label === "VIX"; })[0];
+    return v && !v.error && v.last != null ? v : null;
+  }
+  function policyFor(symbol) {
+    if (!CTX || !CTX.centralBanks) return null;
+    var exp = (CTX.currencyExposure || {})[symbol];
+    if (!exp) return null;
+    var byC = CTX.centralBanks.byCurrency || {};
+    var out = [];
+    exp.forEach(function (e) {
+      var a = byC[e.ccy];
+      if (!a) return;
+      out.push({
+        ccy: e.ccy, sign: e.sign, toneAvailable: !!a.toneAvailable, tone: a.tone,
+        speakers: a.speakers || [], headlines: a.headlines || 0,
+      });
     });
-    tickerSelect.appendChild(group);
-  });
+    return out.length ? out : null;
+  }
+  function newsFor(symbol) { return (CTX && CTX.news) ? (CTX.news[symbol] || null) : null; }
 
-  var VIX = REAL_SNAPSHOT.indices.filter(function (i) { return i.label === "VIX"; })[0];
-  var MACRO_CLEAN = !!VIX && VIX.last < 18;
+  /* ---------------- DOM ---------------- */
+  var pipelineEl = document.getElementById("pipeline");
+  var idxEl = document.getElementById("indexStrip");
+  var setupCard = document.getElementById("setupCard");
+  var runBtn = document.getElementById("runBtn");
+  var ctaNote = document.getElementById("ctaNote");
+  var tickerSelect = document.getElementById("tickerSelect");
+  var historyBody = document.getElementById("historyBody");
+  var winratePct = document.getElementById("winratePct");
+  var winrateBreakdown = document.getElementById("winrateBreakdown");
+  var officialsEl = document.getElementById("officials");
+  var offAux = document.getElementById("offAux");
+  var newsPanel = document.getElementById("newsPanel");
+  var newsAux = document.getElementById("newsAux");
+  var chartEl = document.getElementById("chart");
+  var chartEmpty = document.getElementById("chartEmpty");
+  var chartTitle = document.getElementById("chartTitle");
 
   var AGENTS = [
     { id: "01", role: "Technical Analyst" },
-    { id: "02", role: "Macro / News Analyst" },
+    { id: "02", role: "Macro / Policy Analyst" },
     { id: "03", role: "Risk Manager" },
-    { id: "04", role: "Chief · Arbiter" }
+    { id: "04", role: "Chief · Arbiter" },
   ];
 
-  var pipelineEl = document.getElementById("pipeline");
   AGENTS.forEach(function (a, i) {
     var card = document.createElement("div");
     card.className = "agent-card";
     card.id = "agent-" + i;
     card.innerHTML =
-      '<div class="agent-top">' +
-        '<div class="agent-id"><span class="agent-num">' + a.id + "</span>" +
-        '<span class="agent-role">' + a.role + "</span></div>" +
-        '<span class="status-chip" id="chip-' + i + '"><span class="dot"></span><span class="txt">Standby</span></span>' +
-      "</div>" +
-      '<div class="agent-body" id="body-' + i + '"></div>';
+      '<div class="agent-head" data-idx="' + i + '" role="button" tabindex="0" aria-expanded="false">' +
+        '<div class="agent-id"><span class="agent-num">' + a.id + '</span>' +
+        '<span class="agent-role">' + esc(a.role) + '</span></div>' +
+        '<div style="display:flex;align-items:center;gap:8px;">' +
+          '<span class="status-chip" id="chip-' + i + '"><span class="dot"></span><span class="txt">Standby</span></span>' +
+          '<span class="chev">&#9654;</span>' +
+        '</div></div>' +
+      '<div class="agent-body"><div id="body-' + i + '"></div><div class="drill" id="drill-' + i + '"></div></div>';
     pipelineEl.appendChild(card);
   });
 
-  var idxEl = document.getElementById("indexStrip");
-  REAL_SNAPSHOT.indices.forEach(function (ix) {
-    var cell = document.createElement("div");
-    cell.className = "index-cell";
-    if (ix.error || ix.last == null) {
-      cell.innerHTML = '<span class="sym">' + (ix.label || "?") + '</span><span class="val">—</span><span class="chg">n/a</span>';
-    } else {
-      cell.innerHTML =
-        '<span class="sym">' + ix.label + "</span>" +
-        '<span class="val">' + fmt2(ix.last) + "</span>" +
-        '<span class="chg ' + (ix.chg_pct >= 0 ? "up" : "down") + '">' + sign(ix.chg_pct) + "%</span>";
-    }
-    idxEl.appendChild(cell);
+  function toggleAgent(head) {
+    var card = document.getElementById("agent-" + head.getAttribute("data-idx"));
+    var open = card.classList.toggle("expanded");
+    head.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  pipelineEl.addEventListener("click", function (ev) {
+    var h = ev.target.closest(".agent-head");
+    if (h) toggleAgent(h);
+  });
+  pipelineEl.addEventListener("keydown", function (ev) {
+    if (ev.key !== "Enter" && ev.key !== " ") return;
+    var h = ev.target.closest(".agent-head");
+    if (h) { ev.preventDefault(); toggleAgent(h); }
   });
 
-  var snapTimeEl = document.getElementById("snapTime");
-  if (snapTimeEl) {
-    var snapDate = new Date(REAL_SNAPSHOT.fetched_utc);
-    var snapFmt = new Intl.DateTimeFormat("en-US", {
-      timeZone: "America/New_York", month: "short", day: "numeric",
-      hour: "2-digit", minute: "2-digit", hour12: false
+  /* ---------------- chart ---------------- */
+  var chart = null, candleSeries = null, priceLines = [];
+  function ensureChart() {
+    if (chart || !window.LightweightCharts) return chart;
+    chart = window.LightweightCharts.createChart(chartEl, {
+      layout: { background: { color: "transparent" }, textColor: "#8A93A6", fontFamily: "ui-monospace, monospace", fontSize: 10 },
+      grid: { vertLines: { color: "#1B2130" }, horzLines: { color: "#1B2130" } },
+      rightPriceScale: { borderColor: "#232938" },
+      timeScale: { borderColor: "#232938", timeVisible: true, secondsVisible: false },
     });
-    var ageMin = Math.max(0, Math.round((Date.now() - snapDate.getTime()) / 60000));
-    var ageTxt = ageMin < 90 ? ageMin + " min ago" : Math.round(ageMin / 60) + "h ago";
-    snapTimeEl.textContent = snapFmt.format(snapDate) + " ET (" + ageTxt + ", " + dataSourceLabel + ")";
-  }
-
-  function nyParts() {
-    var fmt = new Intl.DateTimeFormat("en-US", {
-      timeZone: "America/New_York",
-      hour12: false, weekday: "short",
-      hour: "2-digit", minute: "2-digit", second: "2-digit"
+    candleSeries = chart.addCandlestickSeries({
+      upColor: "#3DDC97", downColor: "#FF5C7A",
+      borderUpColor: "#3DDC97", borderDownColor: "#FF5C7A",
+      wickUpColor: "#3DDC97", wickDownColor: "#FF5C7A",
     });
-    var parts = {};
-    fmt.formatToParts(new Date()).forEach(function (p) { parts[p.type] = p.value; });
-    return {
-      weekday: parts.weekday,
-      h: parseInt(parts.hour, 10),
-      m: parseInt(parts.minute, 10),
-      s: parseInt(parts.second, 10)
-    };
-  }
-
-  // NYSE cash session — governs the pill label only (relevant to the 8 equity names).
-  function isEquityOpen(p) {
-    var isWeekday = ["Mon","Tue","Wed","Thu","Fri"].indexOf(p.weekday) !== -1;
-    var mins = p.h * 60 + p.m;
-    return isWeekday && mins >= 9 * 60 + 30 && mins < 16 * 60;
-  }
-  // Futures/FX/commodities trade nearly around the clock — closed only over the
-  // weekend gap (Fri 17:00 ET to Sun 18:00 ET). The hourly scan runs on this clock
-  // so it covers the whole multi-asset universe, not just NYSE hours.
-  function isGlobalSessionOpen(p) {
-    if (p.weekday === "Sat") return false;
-    if (p.weekday === "Fri" && p.h * 60 + p.m >= 17 * 60) return false;
-    if (p.weekday === "Sun" && p.h * 60 + p.m < 18 * 60) return false;
-    return true;
-  }
-
-  var marketPill = document.getElementById("marketPill");
-  var nyClock = document.getElementById("nyClock");
-  var countdownEl = document.getElementById("countdown");
-  var countdownWrap = document.getElementById("countdownWrap");
-  var weekendMsg = document.getElementById("weekendMsg");
-  var lastHourTriggered = -1;
-
-  function pad(n) { return (n < 10 ? "0" : "") + n; }
-
-  function tickClock() {
-    var p = nyParts();
-    nyClock.textContent = pad(p.h) + ":" + pad(p.m) + ":" + pad(p.s);
-    var eqOpen = isEquityOpen(p);
-    marketPill.textContent = "NYSE " + (eqOpen ? "Open" : "Closed");
-    marketPill.className = "pill " + (eqOpen ? "open" : "closed");
-
-    var sessionOpen = isGlobalSessionOpen(p);
-    if (sessionOpen) {
-      var secsLeft = (59 - p.m) * 60 + (60 - p.s);
-      if (p.m === 0 && p.s === 0) secsLeft = 3600;
-      var mm = Math.floor(secsLeft / 60), ss = secsLeft % 60;
-      countdownEl.textContent = pad(mm) + ":" + pad(ss);
-      countdownWrap.style.display = "";
-      weekendMsg.style.display = "none";
-      if (p.m === 0 && p.s <= 1 && lastHourTriggered !== p.h) {
-        lastHourTriggered = p.h;
-        runScan(true);
-      }
-    } else {
-      countdownWrap.style.display = "none";
-      weekendMsg.style.display = "";
+    if (window.ResizeObserver) {
+      new ResizeObserver(function () {
+        if (chart && chartEl.clientWidth) chart.applyOptions({ width: chartEl.clientWidth });
+      }).observe(chartEl);
     }
+    return chart;
   }
-  tickClock();
-  setInterval(tickClock, 1000);
-
-  var runBtn = document.getElementById("runBtn");
-  var ctaNote = document.getElementById("ctaNote");
-  var setupCard = document.getElementById("setupCard");
-  var historyBody = document.getElementById("historyBody");
-  var winratePct = document.getElementById("winratePct");
-  var winrateBreakdown = document.getElementById("winrateBreakdown");
-  var running = false;
-
-  if (!CANDIDATES.length) {
-    runBtn.disabled = true;
-    ctaNote.textContent = "No usable data in this snapshot — the last fetch failed for every instrument";
-    setupCard.innerHTML = '<div class="setup-empty">This snapshot has no usable data (the fetch failed for every instrument). Try again after the next refresh.</div>';
+  function drawChart(x, entry, stop, target) {
+    if (!window.LightweightCharts) {
+      chartEl.style.display = "none";
+      chartEmpty.style.display = "block";
+      chartEmpty.textContent = "Chart library unavailable.";
+      return;
+    }
+    if (!x.bars || !x.bars.length) {
+      chartEl.style.display = "none";
+      chartEmpty.style.display = "block";
+      chartEmpty.textContent = "No intraday bars for " + x.symbol + ".";
+      return;
+    }
+    chartEmpty.style.display = "none";
+    chartEl.style.display = "block";
+    ensureChart();
+    chart.applyOptions({ width: chartEl.clientWidth || 600, height: 260 });
+    chartTitle.textContent = x.symbol + " · 15-minute";
+    candleSeries.setData(x.bars.map(function (b) {
+      return { time: b.t, open: b.o, high: b.h, low: b.l, close: b.c };
+    }));
+    priceLines.forEach(function (l) { try { candleSeries.removePriceLine(l); } catch (e) {} });
+    priceLines = [];
+    if (entry != null) {
+      [[entry, "#FF9F1C", "entry"], [stop, "#FF5C7A", "stop"], [target, "#3DDC97", "target"]].forEach(function (p) {
+        priceLines.push(candleSeries.createPriceLine({
+          price: p[0], color: p[1], lineWidth: 1,
+          lineStyle: window.LightweightCharts.LineStyle.Dashed,
+          axisLabelVisible: true, title: p[2],
+        }));
+      });
+    }
+    chart.timeScale().fitContent();
   }
 
-  // --- Trade journal: persists across hourly refreshes via localStorage on this browser. ---
+  /* ---------------- panels ---------------- */
+  function renderOfficials() {
+    if (!CTX || !CTX.centralBanks) {
+      officialsEl.innerHTML = '<div class="off-empty">Policy feed unavailable — the context pass has not run yet.</div>';
+      offAux.textContent = "unavailable";
+      return;
+    }
+    var feeds = CTX.centralBanks.feeds || [];
+    var ok = feeds.filter(function (f) { return !f.error; }).length;
+    offAux.textContent = ok + "/" + feeds.length + " feeds live";
+    var byC = CTX.centralBanks.byCurrency || {};
+    var all = [];
+    Object.keys(byC).forEach(function (c) {
+      (byC[c].speakers || []).forEach(function (s) { all.push(s); });
+    });
+    all.sort(function (a, b) { return b.weight - a.weight; });
+    if (!all.length) {
+      var n = feeds.reduce(function (a, f) { return a + ((f.items || []).length); }, 0);
+      officialsEl.innerHTML = '<div class="off-empty">No named policy makers in the latest ' + n + ' headlines.</div>';
+      return;
+    }
+    officialsEl.innerHTML = all.slice(0, 7).map(function (s) {
+      var dots = "";
+      for (var i = 0; i < 3; i++) dots += '<i class="' + (i < s.weight ? "" : "off") + '"></i>';
+      var u = safeUrl(s.link);
+      var t = u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + esc(s.title) + "</a>" : esc(s.title);
+      return '<div class="off-row"><div class="off-top">' +
+        '<span class="bank-chip">' + esc(s.bank) + "</span>" +
+        '<span class="off-name">' + esc(s.name) + "</span>" +
+        '<span class="off-role">' + esc(s.role) + "</span>" +
+        '<span class="weight-dots" title="market influence">' + dots + "</span>" +
+        '</div><div class="off-title">' + t + "</div></div>";
+    }).join("");
+  }
+
+  function renderNews(symbol) {
+    newsAux.textContent = symbol ? "for " + symbol : "";
+    var n = newsFor(symbol);
+    if (!n || !n.news || !n.news.length) {
+      newsPanel.innerHTML = '<div class="off-empty">No headlines found for ' + esc(symbol || "this instrument") + ".</div>";
+      return;
+    }
+    newsPanel.innerHTML = n.news.slice(0, 6).map(function (h) {
+      var cls = h.sentiment == null ? "neu" : (h.sentiment > 0 ? "pos" : (h.sentiment < 0 ? "neg" : "neu"));
+      var tag = h.sentiment == null ? "–" : (h.sentiment > 0 ? "+" + h.sentiment : String(h.sentiment));
+      var u = safeUrl(h.link);
+      var t = u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + esc(h.title) + "</a>" : esc(h.title);
+      return '<div class="news-row"><span class="sent-tag ' + cls + '">' + esc(tag) + "</span>" +
+        '<span class="news-txt">' + t + ' <span class="news-src">· ' + esc(h.publisher) + "</span></span></div>";
+    }).join("");
+  }
+
+  /* ---------------- journal ---------------- */
   var JOURNAL_KEY = "aplusdesk_journal_v1";
   var journal = [];
-
   function loadJournal() {
-    try {
-      var raw = window.localStorage.getItem(JOURNAL_KEY);
-      journal = raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      journal = [];
-    }
+    try { journal = JSON.parse(window.localStorage.getItem(JOURNAL_KEY) || "[]") || []; }
+    catch (e) { journal = []; }
   }
-
   function saveJournal() {
-    try {
-      window.localStorage.setItem(JOURNAL_KEY, JSON.stringify(journal));
-    } catch (e) { /* private-browsing or storage disabled — journal stays in-memory only this session */ }
+    try { window.localStorage.setItem(JOURNAL_KEY, JSON.stringify(journal)); } catch (e) {}
   }
-
-  function priceLookup(symbol) {
-    for (var i = 0; i < REAL_SNAPSHOT.watchlist.length; i++) {
-      var w = REAL_SNAPSHOT.watchlist[i];
-      if (w.symbol === symbol && !w.error && w.last != null) return w.last;
-    }
-    return null;
+  function priceLookup(sym) {
+    var w = (SNAP.watchlist || []).filter(function (v) { return v.symbol === sym && !v.error && v.last != null; })[0];
+    return w ? w.last : null;
   }
-
-  // Resolve any taken-and-open journal entries against a LATER real snapshot's price.
   function resolveOutcomes() {
     var changed = false;
     journal.forEach(function (j) {
       if (!j.isTrade || !j.taken || j.outcome !== "open") return;
-      if (REAL_SNAPSHOT.fetched_utc === j.snapshotAt) return; // same snapshot as entry — no new price info yet
+      if (SNAP.fetched_utc === j.snapshotAt) return;
       var last = priceLookup(j.symbol);
       if (last == null) return;
       if (j.dir === "long") {
@@ -844,338 +633,462 @@
     });
     if (changed) saveJournal();
   }
-
-  function updateWinRateStrip() {
+  function updateWinRate() {
     var taken = journal.filter(function (j) { return j.isTrade && j.taken; });
-    var wins = taken.filter(function (j) { return j.outcome === "win"; }).length;
-    var losses = taken.filter(function (j) { return j.outcome === "loss"; }).length;
-    var open = taken.filter(function (j) { return j.outcome === "open"; }).length;
-    var decided = wins + losses;
-    if (decided === 0) {
+    var w = taken.filter(function (j) { return j.outcome === "win"; }).length;
+    var l = taken.filter(function (j) { return j.outcome === "loss"; }).length;
+    var o = taken.filter(function (j) { return j.outcome === "open"; }).length;
+    if (w + l === 0) {
       winratePct.textContent = taken.length ? "Awaiting next refresh…" : "No trades ticked yet";
       winratePct.className = "pct empty";
-      winrateBreakdown.textContent = open ? open + " open" : "";
+      winrateBreakdown.textContent = o ? o + " open" : "";
       return;
     }
-    var pct = Math.round((wins / decided) * 100);
-    winratePct.textContent = pct + "% win rate";
+    winratePct.textContent = Math.round((w / (w + l)) * 100) + "% win rate";
     winratePct.className = "pct";
-    winrateBreakdown.innerHTML = '<b class="w">' + wins + 'W</b> · <b class="l">' + losses + 'L</b>' + (open ? " · <b class=\"o\">" + open + " open</b>" : "");
+    winrateBreakdown.innerHTML = '<b class="w">' + w + 'W</b> · <b class="l">' + l + "L</b>" + (o ? ' · <b class="o">' + o + " open</b>" : "");
   }
-
-  function outcomeLabel(o) {
-    if (o === "win") return "WIN";
-    if (o === "loss") return "LOSS";
-    if (o === "open") return "OPEN";
-    return "—";
-  }
-
+  function outcomeLabel(o) { return o === "win" ? "WIN" : o === "loss" ? "LOSS" : o === "open" ? "OPEN" : "—"; }
   function renderHistory() {
     if (!journal.length) {
       historyBody.innerHTML = '<div class="history-empty">No completed scans yet.</div>';
       return;
     }
-    var sorted = journal.slice().sort(function (a, b) { return b.ts - a.ts; });
-    historyBody.innerHTML = "";
-    sorted.forEach(function (j) {
-      var gradeColor = j.grade === "Aplus" ? "var(--bull)" : j.grade === "A" ? "var(--bull)" : j.grade === "PASS" ? "var(--bear)" : "var(--watch)";
-      var row = document.createElement("div");
-      row.className = "history-row";
-      var checkboxHtml = j.isTrade
-        ? '<input type="checkbox" class="taken-check" data-id="' + j.id + '"' + (j.taken ? " checked" : "") + '>'
-        : '<input type="checkbox" class="taken-check" disabled title="PASS — no position to take">';
-      var outcomeClass = j.isTrade && j.taken ? j.outcome : "na";
-      row.innerHTML =
-        '<span>' + checkboxHtml + '</span>' +
-        '<span class="t">' + j.timeLabel + '</span>' +
-        '<span class="sym">' + j.symbol + '</span>' +
-        '<span class="note">' + j.note + '</span>' +
-        '<span class="grade" style="color:' + gradeColor + '">' + gradeLabel(j.grade) + '</span>' +
-        '<span class="rr">' + fmt2(j.rr) + '</span>' +
-        '<span class="outcome-badge ' + outcomeClass + '">' + (j.isTrade ? (j.taken ? outcomeLabel(j.outcome) : "—") : "n/a") + '</span>';
-      historyBody.appendChild(row);
-    });
+    historyBody.innerHTML = journal.slice().sort(function (a, b) { return b.ts - a.ts; }).map(function (j) {
+      var gc = (j.grade === "Aplus" || j.grade === "A") ? "var(--bull)" : (j.grade === "PASS" ? "var(--bear)" : "var(--watch)");
+      var cb = j.isTrade
+        ? '<input type="checkbox" class="taken-check" data-id="' + esc(j.id) + '"' + (j.taken ? " checked" : "") + ">"
+        : '<input type="checkbox" class="taken-check" disabled title="PASS — no position">';
+      var oc = (j.isTrade && j.taken) ? j.outcome : "na";
+      return '<div class="history-row"><span>' + cb + "</span>" +
+        '<span class="t">' + esc(j.timeLabel) + "</span>" +
+        '<span class="sym">' + esc(j.symbol) + "</span>" +
+        '<span class="note">' + esc(j.note) + "</span>" +
+        '<span class="grade" style="color:' + gc + '">' + esc(gradeLabel(j.grade)) + "</span>" +
+        '<span class="rr">' + fmt2(j.rr) + "</span>" +
+        '<span class="outcome-badge ' + oc + '">' + (j.isTrade ? (j.taken ? outcomeLabel(j.outcome) : "—") : "n/a") + "</span></div>";
+    }).join("");
   }
-
   historyBody.addEventListener("change", function (ev) {
     var el = ev.target;
     if (!el.classList || !el.classList.contains("taken-check") || el.disabled) return;
-    var id = el.getAttribute("data-id");
-    var entry = journal.filter(function (j) { return j.id === id; })[0];
+    var entry = journal.filter(function (j) { return j.id === el.getAttribute("data-id"); })[0];
     if (!entry) return;
     entry.taken = el.checked;
-    saveJournal();
-    resolveOutcomes();
-    renderHistory();
-    updateWinRateStrip();
+    saveJournal(); resolveOutcomes(); renderHistory(); updateWinRate();
   });
 
-  loadJournal();
-  resolveOutcomes();
-  renderHistory();
-  updateWinRateStrip();
+  /* ---------------- clock ---------------- */
+  function nyParts() {
+    var f = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York", hour12: false, weekday: "short",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+    });
+    var p = {};
+    f.formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; });
+    return { weekday: p.weekday, h: +p.hour, m: +p.minute, s: +p.second };
+  }
+  function isEquityOpen(p) {
+    return ["Mon","Tue","Wed","Thu","Fri"].indexOf(p.weekday) !== -1 &&
+      (p.h * 60 + p.m) >= 570 && (p.h * 60 + p.m) < 960;
+  }
+  function isGlobalOpen(p) {
+    if (p.weekday === "Sat") return false;
+    if (p.weekday === "Fri" && p.h * 60 + p.m >= 1020) return false;
+    if (p.weekday === "Sun" && p.h * 60 + p.m < 1080) return false;
+    return true;
+  }
+  var marketPill = document.getElementById("marketPill");
+  var nyClock = document.getElementById("nyClock");
+  var countdownEl = document.getElementById("countdown");
+  var countdownWrap = document.getElementById("countdownWrap");
+  var weekendMsg = document.getElementById("weekendMsg");
+  var lastHourTriggered = -1;
 
-  function setChip(i, cls, txt) {
-    var chip = document.getElementById("chip-" + i);
-    chip.className = "status-chip " + cls;
-    chip.querySelector(".txt").textContent = txt;
+  function tickClock() {
+    var p = nyParts();
+    nyClock.textContent = pad(p.h) + ":" + pad(p.m) + ":" + pad(p.s);
+    var eq = isEquityOpen(p);
+    marketPill.textContent = "NYSE " + (eq ? "Open" : "Closed");
+    marketPill.className = "pill " + (eq ? "open" : "closed");
+    if (isGlobalOpen(p)) {
+      var left = (59 - p.m) * 60 + (60 - p.s);
+      if (p.m === 0 && p.s === 0) left = 3600;
+      countdownEl.textContent = pad(Math.floor(left / 60)) + ":" + pad(left % 60);
+      countdownWrap.style.display = ""; weekendMsg.style.display = "none";
+      if (p.m === 0 && p.s <= 1 && lastHourTriggered !== p.h) {
+        lastHourTriggered = p.h;
+        runScan(true);
+      }
+    } else {
+      countdownWrap.style.display = "none"; weekendMsg.style.display = "";
+    }
   }
 
+  /* ---------------- pipeline helpers ---------------- */
+  function setChip(i, cls, txt) {
+    var c = document.getElementById("chip-" + i);
+    c.className = "status-chip " + cls;
+    c.querySelector(".txt").textContent = txt;
+  }
   function typeLines(i, lines, done) {
     var body = document.getElementById("body-" + i);
     body.innerHTML = "";
-    var idx = 0;
-    function next() {
-      if (idx >= lines.length) { if (done) done(); return; }
+    var k = 0;
+    (function next() {
+      if (k >= lines.length) { if (done) done(); return; }
       var d = document.createElement("div");
-      d.className = "line" + (lines[idx].strong ? " verdict" : "");
-      d.textContent = lines[idx].text;
-      d.style.animationDelay = "0s";
+      d.className = "line" + (lines[k].strong ? " verdict" : "");
+      d.textContent = lines[k].text;
       body.appendChild(d);
-      idx++;
-      setTimeout(next, 420);
-    }
-    next();
+      k++;
+      setTimeout(next, 360);
+    })();
   }
-
+  function setDrill(i, html) { document.getElementById("drill-" + i).innerHTML = html; }
   function resetPipeline() {
     for (var i = 0; i < AGENTS.length; i++) {
       setChip(i, "", "Standby");
       document.getElementById("body-" + i).innerHTML = "";
-      document.getElementById("agent-" + i).className = "agent-card";
+      document.getElementById("drill-" + i).innerHTML = "";
+      var c = document.getElementById("agent-" + i);
+      c.className = "agent-card";
+      c.querySelector(".agent-head").setAttribute("aria-expanded", "false");
     }
   }
-
-  function grade(techScore, macroClean, rr, riskVeto) {
-    if (riskVeto) return "PASS";
-    if (techScore >= 80 && macroClean && rr >= 2.5) return "Aplus";
-    if (techScore >= 70 && rr >= 2) return "A";
-    if (techScore >= 60) return "B";
+  function rulesHtml(rules) {
+    return rules.map(function (r) {
+      var cls = r.hit === true ? "hit" : (r.hit === false ? "miss" : "neutral");
+      var d = r.showMark === false ? "" : (r.d > 0 ? "+" + r.d : String(r.d));
+      return '<div class="rule ' + cls + '"><span class="mark">' + esc(d) + '</span><span class="txt">' + esc(r.txt) + "</span></div>";
+    }).join("");
+  }
+  function kvHtml(pairs) {
+    return '<div class="kv">' + pairs.map(function (p) {
+      return '<span class="k">' + esc(p[0]) + '</span><span class="v">' + esc(p[1]) + "</span>";
+    }).join("") + "</div>";
+  }
+  function grade(score, macroClean, rr, veto) {
+    if (veto) return "PASS";
+    if (score >= 80 && macroClean && rr >= 2.5) return "Aplus";
+    if (score >= 70 && rr >= 2) return "A";
+    if (score >= 60) return "B";
     return "C";
   }
   function gradeLabel(g) { return g === "Aplus" ? "A+" : g; }
 
-  function technicalLines(x, dir, score) {
-    var d = x.decimals;
-    var trendTxt;
-    if (dir === "long") {
-      trendTxt = (x.last > x.ema21 && x.ema21 > x.ema50)
-        ? "Price (" + fmtP(x.last, d) + ") is stacked above the 21EMA (" + fmtP(x.ema21, d) + ") and 50EMA (" + fmtP(x.ema50, d) + ") — trend aligned bullish."
-        : "Price (" + fmtP(x.last, d) + ") is testing the 21EMA (" + fmtP(x.ema21, d) + ") for a reclaim against the 50EMA (" + fmtP(x.ema50, d) + ").";
-    } else {
-      trendTxt = (x.last < x.ema21 && x.ema21 < x.ema50)
-        ? "Price (" + fmtP(x.last, d) + ") is stacked below the 21EMA (" + fmtP(x.ema21, d) + ") and 50EMA (" + fmtP(x.ema50, d) + ") — trend aligned bearish."
-        : "Price (" + fmtP(x.last, d) + ") is fading below the 21EMA (" + fmtP(x.ema21, d) + ") against the 50EMA (" + fmtP(x.ema50, d) + ").";
-    }
-    var rangeTxt = dir === "long"
-      ? "Sitting " + fmt2((x.sessionHi - x.last) / x.last * 100) + "% below the session high of " + fmtP(x.sessionHi, d) + "."
-      : "Sitting " + fmt2((x.last - x.sessionLo) / x.last * 100) + "% above the session low of " + fmtP(x.sessionLo, d) + ".";
-    var volTxt = x.vol_ratio != null
-      ? "RSI14 reads " + x.rsi14 + ", volume running " + x.vol_ratio + "x the 20-day average. "
-      : "RSI14 reads " + x.rsi14 + " (spot FX carries no exchange volume). ";
-    return [
-      { text: x.symbol + " (" + x.name + ") surfaced from the " + x.assetClass + " watchlist scan." },
-      { text: trendTxt },
-      { text: volTxt + rangeTxt },
-      { text: "Confidence score " + score + " / 100.", strong: true }
-    ];
-  }
-
-  function macroLines(x, clean) {
-    var vixTxt = VIX ? ("VIX at " + fmt2(VIX.last) + " (" + sign(VIX.chg_pct) + "% today)") : "Vol regime unavailable";
-    var moveTxt = Math.abs(x.chg_pct) >= 3
-      ? x.symbol + " is already " + sign(x.chg_pct) + "% today — chasing an extended move adds slippage risk."
-      : x.symbol + " is " + sign(x.chg_pct) + "% today, no extension concern yet.";
-    return [
-      { text: "Cross-checking the desk's vol regime and " + x.symbol + "'s own intraday move." },
-      { text: vixTxt + (clean ? " — no desk-wide de-risking flag." : " — elevated vol regime, desk trims size on new entries.") },
-      { text: moveTxt, strong: true }
-    ];
-  }
-
-  function riskLines(atr, stopPct, rr, veto, refLabel, refVal, dec) {
-    var refPhrase = (refLabel === "high" || refLabel === "low")
-      ? "today's session " + refLabel + " (" + fmtP(refVal, dec) + ")"
-      : "an ATR projection of " + fmtP(refVal, dec) + " (session extreme too close to serve as a target)";
-    return [
-      { text: "15-min ATR14 is " + fmtP(atr, dec) + " — stop set at 1.2x intraday ATR (" + fmt2(stopPct) + "% away), target referencing " + refPhrase + "." },
-      { text: veto
-          ? "R:R " + fmt2(rr) + " falls outside the desk's 1–3 R:R band — position vetoed."
-          : "R:R " + fmt2(rr) + " clears the desk's 1–3 R:R band, sizing approved.", strong: true }
-    ];
-  }
+  /* ---------------- scan ---------------- */
+  var running = false, CANDIDATES = [], BY_SYMBOL = {}, candidateIdx = 0;
 
   function runScan(auto) {
-    if (running) return;
-    if (!CANDIDATES.length) return;
+    if (running || !CANDIDATES.length) return;
     running = true;
     runBtn.disabled = true;
     ctaNote.textContent = auto ? "Auto-triggered at the top of the hour" : "Scanning…";
     resetPipeline();
 
-    var picked = tickerSelect.value;
-    var cand;
-    if (picked !== "auto" && CANDIDATES_BY_SYMBOL[picked]) {
-      cand = CANDIDATES_BY_SYMBOL[picked];
-    } else {
-      if (auto) candidateIdx = 0;
-      cand = CANDIDATES[candidateIdx % CANDIDATES.length];
-      candidateIdx++;
-    }
-    var x = cand.x, dir = cand.dir, techScore = cand.score;
+    var picked = tickerSelect.value, cand;
+    if (picked !== "auto" && BY_SYMBOL[picked]) cand = BY_SYMBOL[picked];
+    else { if (auto) candidateIdx = 0; cand = CANDIDATES[candidateIdx % CANDIDATES.length]; candidateIdx++; }
 
-    // Step 0: Technical
+    var x = cand.x, dir = cand.dir, score = cand.score, rules = cand.rules, d = x.decimals;
+    renderNews(x.symbol);
+
     document.getElementById("agent-0").classList.add("active");
     setChip(0, "scanning", "Scanning");
     setTimeout(function () {
       setChip(0, "pass", "Signal found");
       document.getElementById("agent-0").classList.remove("active");
-      typeLines(0, technicalLines(x, dir, techScore), function () { runMacro(); });
-    }, 900);
+      var trend = dir === "long"
+        ? ((x.last > x.ema21 && x.ema21 > x.ema50) ? "stacked bullish" : "testing the 21EMA for a reclaim")
+        : ((x.last < x.ema21 && x.ema21 < x.ema50) ? "stacked bearish" : "fading below the 21EMA");
+      typeLines(0, [
+        { text: x.symbol + " (" + x.name + ") surfaced from the " + x.assetClass + " scan." },
+        { text: "Price " + fmtP(x.last, d) + " — trend " + trend + " vs 21EMA " + fmtP(x.ema21, d) + " / 50EMA " + fmtP(x.ema50, d) + "." },
+        { text: "RSI14 " + x.rsi14 + (x.vol_ratio == null ? " (spot FX carries no exchange volume)." : ", volume " + x.vol_ratio + "x the 20-day average.") },
+        { text: "Confidence " + score + " / 100.", strong: true },
+      ], runMacro);
+      setDrill(0, '<div class="drill-title">Score derivation</div>' + rulesHtml(rules) +
+        '<div class="drill-title">Raw inputs</div>' + kvHtml([
+          ["Last", fmtP(x.last, d)], ["EMA21 (daily)", fmtP(x.ema21, d)], ["EMA50 (daily)", fmtP(x.ema50, d)],
+          ["RSI14 (daily)", String(x.rsi14)], ["ATR14 (15-min)", fmtP(x.atrIntraday, d)],
+          ["Session high", fmtP(x.sessionHi, d)], ["Session low", fmtP(x.sessionLo, d)],
+          ["Volume vs 20d", x.vol_ratio == null ? "n/a" : x.vol_ratio + "x"],
+          ["Change today", sign(x.chg_pct) + "%"],
+        ]));
+    }, 800);
 
     function runMacro() {
-      var clean = MACRO_CLEAN;
       document.getElementById("agent-1").classList.add("active");
       setChip(1, "scanning", "Checking");
+      var vix = vixInfo(), clean = !!vix && vix.last < 18;
+      var pol = policyFor(x.symbol), news = newsFor(x.symbol);
       setTimeout(function () {
         setChip(1, clean ? "pass" : "flag", clean ? "Clear" : "Caution");
         document.getElementById("agent-1").classList.remove("active");
-        typeLines(1, macroLines(x, clean), function () { runRisk(clean); });
-      }, 850);
+
+        var polLine;
+        if (!pol) polLine = "No direct central-bank exposure mapped for " + x.symbol + ".";
+        else {
+          var named = pol.reduce(function (a, p) { return a + p.speakers.length; }, 0);
+          var toneSome = pol.filter(function (p) { return p.toneAvailable; });
+          polLine = toneSome.length
+            ? "Policy tone readable for " + toneSome.map(function (p) { return p.ccy; }).join("/") + "; " + named + " official appearance(s) tracked."
+            : (named ? named + " official appearance(s) tracked, but headlines carry no explicit policy language — tone not inferred."
+                     : "No named officials in the latest policy headlines.");
+        }
+        var newsLine = (news && news.news.length)
+          ? (news.scoredCount
+              ? "Headline sentiment " + (news.netSentiment > 0 ? "+" : "") + news.netSentiment + " across " + news.scoredCount + " scored of " + news.news.length + " headlines."
+              : news.news.length + " headlines found, none carried scoring keywords.")
+          : "No headlines retrieved for this instrument.";
+
+        typeLines(1, [
+          { text: "Cross-checking vol regime, policy exposure and headlines for " + x.symbol + "." },
+          { text: (vix ? "VIX " + fmt2(vix.last) + " (" + sign(vix.chg_pct) + "%)" : "VIX unavailable") + (clean ? " — no desk-wide de-risking flag." : " — elevated regime, desk trims size.") },
+          { text: polLine },
+          { text: newsLine, strong: true },
+        ], function () { runRisk(clean); });
+
+        var polHtml = "";
+        if (pol) {
+          pol.forEach(function (p) {
+            polHtml += '<div class="drill-title">' + esc(p.ccy) + " policy · " +
+              (p.sign > 0 ? "moves " + esc(x.symbol) + " with it" : "moves " + esc(x.symbol) + " inversely") + "</div>" +
+              kvHtml([
+                ["Headlines scanned", String(p.headlines)],
+                ["Policy tone", p.toneAvailable ? (p.tone > 0 ? "hawkish +" + p.tone : (p.tone < 0 ? "dovish " + p.tone : "balanced 0")) : "not stated in headlines"],
+                ["Officials tracked", String(p.speakers.length)],
+              ]) +
+              (p.speakers.length ? rulesHtml(p.speakers.slice(0, 3).map(function (s) {
+                return { txt: s.name + " — " + s.role, d: s.bank, hit: null, showMark: true };
+              }).map(function (r) { return { txt: r.txt, d: r.d, hit: null }; })) : "");
+          });
+        }
+        setDrill(1, '<div class="drill-title">Volatility regime</div>' + kvHtml([
+          ["VIX", vix ? fmt2(vix.last) : "n/a"],
+          ["Regime", clean ? "clean (<18)" : "cautious (≥18)"],
+          ["Effect", clean ? "R:R floor stays 1.0" : "R:R floor raised to 1.5"],
+          [x.symbol + " today", sign(x.chg_pct) + "%"],
+        ]) + polHtml + '<div class="drill-title">Headline sentiment</div>' + kvHtml([
+          ["Headlines", news ? String(news.news.length) : "0"],
+          ["Scored", news ? String(news.scoredCount || 0) : "0"],
+          ["Net", (news && news.scoredCount) ? ((news.netSentiment > 0 ? "+" : "") + news.netSentiment) : "n/a"],
+        ]));
+      }, 780);
     }
 
     function runRisk(macroClean) {
       document.getElementById("agent-2").classList.add("active");
       setChip(2, "scanning", "Sizing");
-      // Day-trade sizing: stop/target scale off intraday (15-min) ATR and today's
-      // session high/low, not the multi-day swing range — a day trader doesn't
-      // want a stop wide enough to hold through a week of chop.
       var stopDist = x.atrIntraday * 1.2;
       var stopPct = stopDist / x.last * 100;
-      var minTargetDist = x.atrIntraday * 2.0;
+      var minTarget = x.atrIntraday * 2.0;
       var refLabel, refVal, targetDist;
       if (dir === "long") {
-        var distToHi = x.sessionHi > x.last ? x.sessionHi - x.last : 0;
-        if (distToHi >= minTargetDist) { refLabel = "high"; refVal = x.sessionHi; targetDist = distToHi; }
+        var dh = x.sessionHi > x.last ? x.sessionHi - x.last : 0;
+        if (dh >= minTarget) { refLabel = "session high"; refVal = x.sessionHi; targetDist = dh; }
         else { refLabel = "ATR projection"; refVal = x.last + x.atrIntraday * 2.5; targetDist = x.atrIntraday * 2.5; }
       } else {
-        var distToLo = x.sessionLo < x.last ? x.last - x.sessionLo : 0;
-        if (distToLo >= minTargetDist) { refLabel = "low"; refVal = x.sessionLo; targetDist = distToLo; }
+        var dl = x.sessionLo < x.last ? x.last - x.sessionLo : 0;
+        if (dl >= minTarget) { refLabel = "session low"; refVal = x.sessionLo; targetDist = dl; }
         else { refLabel = "ATR projection"; refVal = x.last - x.atrIntraday * 2.5; targetDist = x.atrIntraday * 2.5; }
       }
       var rr = targetDist / stopDist;
-      // Desk mandate: only 1–3 R:R trades are in scope; tighten the floor when macro is cautious.
-      var minRR = macroClean ? 1.0 : 1.5;
-      var maxRR = 3.0;
+      var minRR = macroClean ? 1.0 : 1.5, maxRR = 3.0;
       var veto = rr < minRR || rr > maxRR;
       setTimeout(function () {
         setChip(2, veto ? "veto" : "pass", veto ? "Vetoed" : "Cleared");
         document.getElementById("agent-2").classList.remove("active");
-        typeLines(2, riskLines(x.atrIntraday, stopPct, rr, veto, refLabel, refVal, x.decimals), function () {
-          runChief(macroClean, stopDist, targetDist, rr, veto, refVal);
-        });
-      }, 900);
+        typeLines(2, [
+          { text: "15-min ATR14 " + fmtP(x.atrIntraday, d) + " — stop at 1.2x ATR (" + fmt2(stopPct) + "% away), target referencing " + refLabel + " (" + fmtP(refVal, d) + ")." },
+          { text: veto
+              ? "R:R " + fmt2(rr) + " falls outside the desk's " + minRR + "–" + maxRR + " band — vetoed."
+              : "R:R " + fmt2(rr) + " clears the " + minRR + "–" + maxRR + " band, sizing approved.", strong: true },
+        ], function () { runChief(macroClean, stopDist, targetDist, rr, veto, refLabel); });
+        setDrill(2, '<div class="drill-title">Sizing math</div>' + kvHtml([
+          ["ATR14 (15-min)", fmtP(x.atrIntraday, d)],
+          ["Stop multiple", "1.2x ATR"],
+          ["Stop distance", fmtP(stopDist, d) + " (" + fmt2(stopPct) + "%)"],
+          ["Target anchor", refLabel + " " + fmtP(refVal, d)],
+          ["Target distance", fmtP(targetDist, d)],
+          ["Reward : Risk", fmt2(rr)],
+        ]) + '<div class="drill-title">Risk gate</div>' + rulesHtml([
+          { txt: "R:R ≥ " + minRR + " floor" + (macroClean ? " (clean macro)" : " (raised — cautious macro)"), d: rr >= minRR ? 1 : 0, hit: rr >= minRR },
+          { txt: "R:R ≤ " + maxRR + " ceiling — beyond this the target is unrealistic intraday", d: rr <= maxRR ? 1 : 0, hit: rr <= maxRR },
+        ]));
+      }, 820);
     }
 
-    function runChief(macroClean, stopDist, targetDist, rr, veto, refVal) {
+    function runChief(macroClean, stopDist, targetDist, rr, veto, refLabel) {
       document.getElementById("agent-3").classList.add("active");
       setChip(3, "scanning", "Synthesizing");
       setTimeout(function () {
-        var g = grade(techScore, macroClean, rr, veto);
-        setChip(3, g === "PASS" ? "veto" : (g === "Aplus" || g === "A" ? "pass" : "flag"),
+        var g = grade(score, macroClean, rr, veto);
+        setChip(3, g === "PASS" ? "veto" : ((g === "Aplus" || g === "A") ? "pass" : "flag"),
           g === "PASS" ? "No trade" : "Grade " + gradeLabel(g));
         document.getElementById("agent-3").classList.remove("active");
         typeLines(3, [
-          { text: "Weighing a " + techScore + " technical read against a " + (macroClean ? "clean" : "cautious") + " macro backdrop and a " + fmt2(rr) + " R:R." },
+          { text: "Weighing a " + score + " technical read against a " + (macroClean ? "clean" : "cautious") + " macro backdrop and a " + fmt2(rr) + " R:R." },
           { text: g === "PASS"
-              ? "Final call: PASS — setup does not clear the desk's risk bar this hour."
-              : "Final call: " + gradeLabel(g) + " grade, " + dir.toUpperCase() + " " + x.symbol + ".", strong: true }
+              ? "Final call: PASS — does not clear the desk's risk bar this hour."
+              : "Final call: " + gradeLabel(g) + " grade, " + dir.toUpperCase() + " " + x.symbol + ".", strong: true },
         ]);
-        renderSetup(x, dir, g, techScore, stopDist, targetDist, rr, macroClean);
+        var aplus = !veto && score >= 80 && macroClean && rr >= 2.5;
+        var aGrade = !veto && !aplus && score >= 70 && rr >= 2;
+        var bGrade = !veto && !aplus && !aGrade && score >= 60;
+        setDrill(3, '<div class="drill-title">Grade ladder — first match wins</div>' + rulesHtml([
+          { txt: "PASS — risk gate vetoed", d: veto ? 1 : 0, hit: veto ? true : null },
+          { txt: "A+ — score ≥80 AND clean macro AND R:R ≥2.5", d: aplus ? 1 : 0, hit: aplus ? true : null },
+          { txt: "A — score ≥70 AND R:R ≥2", d: aGrade ? 1 : 0, hit: aGrade ? true : null },
+          { txt: "B — score ≥60", d: bGrade ? 1 : 0, hit: bGrade ? true : null },
+          { txt: "C — everything else", d: (!veto && !aplus && !aGrade && !bGrade) ? 1 : 0, hit: (!veto && !aplus && !aGrade && !bGrade) ? true : null },
+        ]) + '<div class="drill-title">Final inputs</div>' + kvHtml([
+          ["Technical score", score + " / 100"],
+          ["Macro", macroClean ? "clean" : "cautious"],
+          ["R:R", fmt2(rr)],
+          ["Target anchor", refLabel],
+          ["Result", gradeLabel(g)],
+        ]));
+        renderSetup(x, dir, g, score, stopDist, targetDist, rr, macroClean);
         logRun(x, dir, g, rr, stopDist, targetDist);
         running = false;
         runBtn.disabled = false;
-        ctaNote.textContent = "Real prices/indicators — cycles through ranked real candidates";
-      }, 950);
+        ctaNote.textContent = "Real prices · intraday sizing · 1–3 R:R only";
+      }, 860);
     }
   }
 
-  function renderSetup(x, dir, g, techScore, stopDist, targetDist, rr, macroClean) {
+  function renderSetup(x, dir, g, score, stopDist, targetDist, rr, macroClean) {
     var d = x.decimals;
     if (g === "PASS") {
       setupCard.innerHTML =
-        '<div class="setup-head">' +
-          '<div class="ticker-block"><span class="ticker-sym">' + x.symbol + '</span>' +
-          '<span class="class-chip">' + x.assetClass + '</span>' +
-          '<span class="ticker-name">' + x.name + '</span></div>' +
-          '<span class="grade-badge g-PASS">PASS</span>' +
-        '</div>' +
-        '<div class="thesis">' + dir.toUpperCase() + ' read scores ' + techScore + '/100, but risk sizing at ' + fmt2(rr) + ':1 falls outside the desk\'s 1–3 R:R band. No position taken.</div>';
+        '<div class="setup-head"><div class="ticker-block">' +
+          '<span class="ticker-sym">' + esc(x.symbol) + "</span>" +
+          '<span class="class-chip">' + esc(x.assetClass) + "</span>" +
+          '<span class="ticker-name">' + esc(x.name) + "</span></div>" +
+          '<span class="grade-badge g-PASS">PASS</span></div>' +
+        '<div class="thesis">' + esc(dir.toUpperCase()) + " read scores " + score + "/100, but sizing at " +
+          fmt2(rr) + ":1 falls outside the desk's 1–3 R:R band. No position taken.</div>";
+      drawChart(x, null);
       return;
     }
     var entry = x.last;
     var stop = dir === "long" ? entry - stopDist : entry + stopDist;
     var target = dir === "long" ? entry + targetDist : entry - targetDist;
-
     setupCard.innerHTML =
-      '<div class="setup-head">' +
-        '<div class="ticker-block">' +
-          '<span class="ticker-sym">' + x.symbol + '</span>' +
-          '<span class="dir-chip ' + dir + '">' + dir.toUpperCase() + '</span>' +
-          '<span class="class-chip">' + x.assetClass + '</span>' +
-          '<span class="ticker-name">' + x.name + '</span>' +
-        '</div>' +
-        '<span class="grade-badge g-' + g + '">' + gradeLabel(g) + '</span>' +
-      '</div>' +
-      '<div class="thesis">' + x.symbol + ' at ' + fmtP(entry, d) + ', RSI14 ' + x.rsi14 + '. ' + (macroClean ? "Macro backdrop is clean" : "Desk is carrying a macro caution flag") + ', and risk sizing clears at ' + fmt2(rr) + ':1.</div>' +
+      '<div class="setup-head"><div class="ticker-block">' +
+        '<span class="ticker-sym">' + esc(x.symbol) + "</span>" +
+        '<span class="dir-chip ' + dir + '">' + dir.toUpperCase() + "</span>" +
+        '<span class="class-chip">' + esc(x.assetClass) + "</span>" +
+        '<span class="ticker-name">' + esc(x.name) + "</span></div>" +
+        '<span class="grade-badge g-' + g + '">' + gradeLabel(g) + "</span></div>" +
+      '<div class="thesis">' + esc(x.symbol) + " at " + fmtP(entry, d) + ", RSI14 " + x.rsi14 + ". " +
+        (macroClean ? "Macro backdrop is clean" : "Desk carries a macro caution flag") +
+        ", and risk sizing clears at " + fmt2(rr) + ":1.</div>" +
       '<div class="params-row">' +
-        '<div class="param"><span class="k">Entry</span><span class="v">' + fmtP(entry, d) + '</span></div>' +
-        '<div class="param"><span class="k">Stop</span><span class="v bear">' + fmtP(stop, d) + '</span></div>' +
-        '<div class="param"><span class="k">Target</span><span class="v bull">' + fmtP(target, d) + '</span></div>' +
-        '<div class="param"><span class="k">R : R</span><span class="v">' + fmt2(rr) + '</span></div>' +
-      '</div>' +
-      '<div class="confidence-row">' +
-        '<span class="k">Confidence</span>' +
-        '<div class="meter"><i id="meterFill"></i></div>' +
-        '<span class="pct">' + techScore + '</span>' +
-      '</div>';
+        '<div class="param"><span class="k">Entry</span><span class="v">' + fmtP(entry, d) + "</span></div>" +
+        '<div class="param"><span class="k">Stop</span><span class="v bear">' + fmtP(stop, d) + "</span></div>" +
+        '<div class="param"><span class="k">Target</span><span class="v bull">' + fmtP(target, d) + "</span></div>" +
+        '<div class="param"><span class="k">R : R</span><span class="v">' + fmt2(rr) + "</span></div></div>" +
+      '<div class="confidence-row"><span class="k">Confidence</span>' +
+        '<div class="meter"><i id="meterFill"></i></div><span class="pct">' + score + "</span></div>";
     requestAnimationFrame(function () {
-      var fill = document.getElementById("meterFill");
-      if (fill) fill.style.width = techScore + "%";
+      var f = document.getElementById("meterFill");
+      if (f) f.style.width = score + "%";
     });
+    drawChart(x, entry, stop, target);
   }
 
   function logRun(x, dir, g, rr, stopDist, targetDist) {
-    var p = nyParts();
-    var isTrade = g !== "PASS";
-    var entry = x.last;
-    var stop = dir === "long" ? entry - stopDist : entry + stopDist;
-    var target = dir === "long" ? entry + targetDist : entry - targetDist;
+    var p = nyParts(), entry = x.last;
     journal.push({
       id: Date.now() + "-" + x.symbol + "-" + Math.random().toString(36).slice(2, 7),
-      ts: Date.now(),
-      timeLabel: pad(p.h) + ":" + pad(p.m),
-      symbol: x.symbol,
-      assetClass: x.assetClass,
-      dir: dir,
-      note: dir.toUpperCase() + " · " + x.assetClass + " · EMA21 " + fmtP(x.ema21, x.decimals) + " · RSI " + x.rsi14,
-      grade: g,
-      rr: rr,
-      isTrade: isTrade,
-      entry: entry, stop: stop, target: target, decimals: x.decimals,
-      snapshotAt: REAL_SNAPSHOT.fetched_utc,
-      taken: false,
-      outcome: "open"
+      ts: Date.now(), timeLabel: pad(p.h) + ":" + pad(p.m),
+      symbol: x.symbol, assetClass: x.assetClass, dir: dir,
+      note: dir.toUpperCase() + " · " + x.assetClass + " · RSI " + x.rsi14,
+      grade: g, rr: rr, isTrade: g !== "PASS",
+      entry: entry,
+      stop: dir === "long" ? entry - stopDist : entry + stopDist,
+      target: dir === "long" ? entry + targetDist : entry - targetDist,
+      decimals: x.decimals, snapshotAt: SNAP.fetched_utc,
+      taken: false, outcome: "open",
     });
-    saveJournal();
-    renderHistory();
-    updateWinRateStrip();
+    saveJournal(); renderHistory(); updateWinRate();
   }
 
-  runBtn.addEventListener("click", function () { runScan(false); });
-
+  /* ---------------- boot ---------------- */
+  function renderIndices() {
+    idxEl.innerHTML = (SNAP.indices || []).map(function (ix) {
+      if (ix.error || ix.last == null) {
+        return '<div class="index-cell"><span class="sym">' + esc(ix.label || "?") + '</span><span class="val">—</span><span class="chg">n/a</span></div>';
+      }
+      return '<div class="index-cell"><span class="sym">' + esc(ix.label) + "</span>" +
+        '<span class="val">' + fmt2(ix.last) + "</span>" +
+        '<span class="chg ' + (ix.chg_pct >= 0 ? "up" : "down") + '">' + sign(ix.chg_pct) + "%</span></div>";
+    }).join("");
+  }
+  function ageLabel(min) { return min < 90 ? min + " min ago" : Math.round(min / 60) + "h ago"; }
+  function renderFreshness() {
+    var el = document.getElementById("freshness");
+    var txt = document.getElementById("freshTxt");
+    var snapTime = document.getElementById("snapTime");
+    var dt = new Date(SNAP.fetched_utc);
+    var age = Math.max(0, Math.round((Date.now() - dt.getTime()) / 60000));
+    el.className = "freshness " + (age <= 75 ? "live" : (age <= 240 ? "stale" : "cold"));
+    txt.textContent = "market " + ageLabel(age);
+    var f = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
+    var ctxAge = CTX ? Math.round((Date.now() - new Date(CTX.fetched_utc).getTime()) / 60000) : null;
+    snapTime.textContent = "market data " + f.format(dt) + " ET (" + ageLabel(age) + "), context " +
+      (ctxAge == null ? "unavailable" : ageLabel(ctxAge));
+  }
+  function populateSelect() {
+    ["Equity", "Index Future", "Commodity", "Forex"].forEach(function (cls) {
+      var members = (SNAP.watchlist || []).filter(function (x) { return x.assetClass === cls && BY_SYMBOL[x.symbol]; });
+      if (!members.length) return;
+      var grp = document.createElement("optgroup");
+      grp.label = cls;
+      members.forEach(function (x) {
+        var o = document.createElement("option");
+        o.value = x.symbol;
+        o.textContent = x.symbol + " — " + x.name;
+        grp.appendChild(o);
+      });
+      tickerSelect.appendChild(grp);
+    });
+  }
+  function start() {
+    CANDIDATES = rankCandidates();
+    BY_SYMBOL = {};
+    CANDIDATES.forEach(function (c) { BY_SYMBOL[c.x.symbol] = c; });
+    renderIndices(); renderFreshness(); populateSelect(); renderOfficials();
+    loadJournal(); resolveOutcomes(); renderHistory(); updateWinRate();
+    if (!CANDIDATES.length) {
+      runBtn.disabled = true;
+      ctaNote.textContent = "No usable instruments in this snapshot.";
+      setupCard.innerHTML = '<div class="setup-empty">This snapshot has no usable data. Try again after the next refresh.</div>';
+    }
+    tickClock();
+    setInterval(tickClock, 1000);
+    runBtn.addEventListener("click", function () { runScan(false); });
+  }
+  function fail(msg) {
+    document.getElementById("freshness").className = "freshness cold";
+    document.getElementById("freshTxt").textContent = "offline";
+    setupCard.innerHTML = '<div class="setup-empty">' + esc(msg) + "</div>";
+    runBtn.disabled = true;
   }
 
-  boot();
+  fetch(DATA_WORKER_URL, { cache: "no-store" })
+    .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(function (live) {
+      if (!live || !live.watchlist || !live.watchlist.length) throw new Error("empty payload");
+      SNAP = live; CTX = live.context || null;
+      start();
+    })
+    .catch(function (e) {
+      fail("Data worker unreachable (" + (e && e.message ? e.message : "error") +
+        "). Nothing is shown rather than showing stale numbers.");
+    });
 })();
 </script>
