@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#151A24"/>
+      <stop offset="1" stop-color="#0A0D13"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="228" fill="url(#bg)"/>
+  <rect x="8" y="8" width="1008" height="1008" rx="222" fill="none" stroke="#232938" stroke-width="16"/>
+
+  <!-- candlesticks: the desk reads price, so the mark is price -->
+  <g stroke-linecap="butt">
+    <line x1="286" y1="700" x2="286" y2="812" stroke="#3DDC97" stroke-width="16"/>
+    <rect x="264" y="722" width="44" height="66" fill="#3DDC97"/>
+
+    <line x1="396" y1="648" x2="396" y2="792" stroke="#FF5C7A" stroke-width="16"/>
+    <rect x="374" y="676" width="44" height="88" fill="#FF5C7A"/>
+
+    <line x1="506" y1="596" x2="506" y2="760" stroke="#3DDC97" stroke-width="16"/>
+    <rect x="484" y="624" width="44" height="104" fill="#3DDC97"/>
+
+    <line x1="616" y1="524" x2="616" y2="704" stroke="#3DDC97" stroke-width="16"/>
+    <rect x="594" y="556" width="44" height="116" fill="#3DDC97"/>
+
+    <line x1="726" y1="486" x2="726" y2="640" stroke="#FF5C7A" stroke-width="16"/>
+    <rect x="704" y="512" width="44" height="98" fill="#FF5C7A"/>
+  </g>
+
+  <text x="527" y="418" font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-size="330" font-weight="700" fill="#FF9F1C" text-anchor="middle"
+        letter-spacing="-14">A+</text>
+</svg>

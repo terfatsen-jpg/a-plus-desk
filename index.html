@@ -1,5 +1,14 @@
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>A+ DESK — Multi-Agent Day-Trading Terminal</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0A0D13">
+<meta name="description" content="Multi-agent day-trading terminal. Deterministic, auditable setup grading across equities, futures, forex and commodities from real market data.">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="A+ DESK">
 <script src="vendor/lightweight-charts.js"></script>
 <style>
   :root {
@@ -1291,5 +1300,14 @@
       fail("Data worker unreachable (" + (e && e.message ? e.message : "error") +
         "). Nothing is shown rather than showing stale numbers.");
     });
+
+  // Installable as a desktop/home-screen app. The worker caches the shell only —
+  // market data is network-only, so being installed can never mean stale prices.
+  // file:// has no service-worker support, so skip it rather than logging an error.
+  if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
 })();
 </script>

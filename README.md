@@ -89,3 +89,26 @@ date and the filing date. The STOCK Act allows weeks of lag, so this is position
 is already leaning which way — and deliberately not presented as an entry trigger.
 
 Not investment advice — an algorithmic technical/risk scan for demonstration.
+
+## Desktop app
+
+`A+ DESK.app` is a native macOS bundle — own Dock icon, own window, no browser
+chrome. Build it from the sibling `a-plus-desk-app` directory:
+
+```bash
+cd ../a-plus-desk-app && ./build.sh && cp -R "dist/A+ DESK.app" /Applications/
+```
+
+It wraps a dedicated Chrome app-mode window with an isolated `--user-data-dir`, so
+it does not touch your normal browsing profile. There is deliberately no Electron
+or Tauri step: a 100MB bundled runtime buys nothing for a single page that has to
+be online to have real prices, and esbuild's native binary hangs on this machine.
+
+The page is also an installable **PWA** — "Install" in Chrome or "Add to Dock" in
+Safari works from any machine, no build required.
+
+**The service worker caches the shell only.** Market data is network-only with no
+fallback, because a cache-first rule over the data worker would serve last night's
+prices as if they were live — exactly the failure the rest of the desk is built to
+avoid. Offline, the shell launches and the page shows its normal "data worker
+unreachable" error rather than stale numbers.
