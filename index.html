@@ -204,6 +204,25 @@
   .off-title a, .news-txt a { color: var(--ash); text-decoration: none; border-bottom: 1px dotted var(--hairline); }
   .off-title a:hover, .news-txt a:hover { color: var(--paper); }
   .off-empty { padding: 14px; font-family: var(--mono); font-size: 11.5px; color: var(--ash-dim); line-height: 1.6; }
+
+  .ev-row { display: grid; grid-template-columns: 58px 1fr auto; gap: 8px; align-items: baseline;
+            padding: 8px 14px; border-bottom: 1px solid var(--hairline-soft); }
+  .ev-row:last-child { border-bottom: none; }
+  .ev-row.sev3 { background: var(--bear-soft); }
+  .ev-when { font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: .03em; }
+  .ev-row.sev3 .ev-when { color: var(--bear); }
+  .ev-row.sev2 .ev-when { color: var(--watch); }
+  .ev-row.sev1 .ev-when { color: var(--ash-dim); }
+  .ev-name { font-size: 12px; line-height: 1.35; }
+  .ev-meta { font-family: var(--mono); font-size: 10px; color: var(--ash-dim); white-space: nowrap; }
+  .ev-note { padding: 9px 14px; border-bottom: 1px solid var(--hairline-soft);
+             font-family: var(--mono); font-size: 10.5px; color: var(--ash); line-height: 1.5; }
+  .ev-note b { color: var(--bear); }
+  .pos-wrap { display: flex; flex-wrap: wrap; gap: 5px; padding: 10px 14px; border-top: 1px solid var(--hairline); }
+  .pos-chip { font-family: var(--mono); font-size: 10px; padding: 2px 6px; border: 1px solid var(--hairline); color: var(--ash-dim); }
+  .pos-chip b { font-weight: 700; }
+  .pos-chip.long b { color: var(--bull); }
+  .pos-chip.short b { color: var(--bear); }
   .news-row { padding: 8px 14px; border-bottom: 1px solid var(--hairline-soft); display: flex; gap: 10px; align-items: flex-start; }
   .news-row:last-child { border-bottom: none; }
   .sent-tag {
@@ -272,6 +291,11 @@
       <div>
         <div class="section-label"><span>Policy Makers</span><span class="aux" id="offAux">central bank feeds</span></div>
         <div class="panel" id="officials"><div class="off-empty">Loading official activity…</div></div>
+      </div>
+
+      <div>
+        <div class="section-label"><span>Event Risk</span><span class="aux" id="evAux">scheduled releases</span></div>
+        <div class="panel" id="eventPanel"><div class="off-empty">Loading economic calendar…</div></div>
       </div>
     </div>
 
@@ -437,6 +461,52 @@
   }
   function newsFor(symbol) { return (CTX && CTX.news) ? (CTX.news[symbol] || null) : null; }
 
+  // Scheduled releases still ahead of us that bear on this instrument, nearest
+  // first. An event with an `only` list is asset-specific (crude inventories);
+  // everything else is a US macro print, and every instrument here is
+  // USD-quoted, so it lands on all of them.
+  function eventsFor(symbol) {
+    var er = CTX && CTX.eventRisk;
+    if (!er || !er.events) return [];
+    var now = Date.now();
+    return er.events.filter(function (e) {
+      if (new Date(e.when_utc).getTime() <= now) return false;
+      return !e.only || e.only.indexOf(symbol) !== -1;
+    }).map(function (e) {
+      return Object.assign({}, e, { minsAway: Math.round((new Date(e.when_utc).getTime() - now) / 60000) });
+    // The worker already sorts, but `blocking[0]` and `elevated[0]` below are
+    // read as "the nearest one" — don't leave that resting on an upstream promise.
+    }).sort(function (a, b) { return a.minsAway - b.minsAway; });
+  }
+
+  // The blackout rule. A severity-3 print (NFP, CPI, PCE, an FOMC decision)
+  // inside 90 minutes is a hard veto: the tape gaps straight through an
+  // intraday stop, so the measured R:R is fiction. Out to 4 hours it only
+  // raises the bar rather than closing the desk.
+  function eventRiskFor(symbol) {
+    var ups = eventsFor(symbol);
+    var blocking = ups.filter(function (e) { return e.severity === 3 && e.minsAway <= 90; });
+    var elevated = ups.filter(function (e) { return e.severity >= 2 && e.minsAway <= 240; });
+    return {
+      upcoming: ups,
+      blocking: blocking,
+      elevated: elevated,
+      veto: blocking.length > 0,
+      rrBump: !blocking.length && elevated.length > 0,
+    };
+  }
+
+  function positioningFor(symbol) {
+    return (CTX && CTX.positioning) ? (CTX.positioning[symbol] || null) : null;
+  }
+
+  function fmtMins(m) {
+    if (m < 60) return m + "m";
+    var h = Math.floor(m / 60), r = m % 60;
+    if (h < 24) return h + "h" + (r ? " " + r + "m" : "");
+    return Math.floor(h / 24) + "d " + (h % 24) + "h";
+  }
+
   /* ---------------- DOM ---------------- */
   var pipelineEl = document.getElementById("pipeline");
   var idxEl = document.getElementById("indexStrip");
@@ -451,6 +521,8 @@
   var offAux = document.getElementById("offAux");
   var newsPanel = document.getElementById("newsPanel");
   var newsAux = document.getElementById("newsAux");
+  var eventPanel = document.getElementById("eventPanel");
+  var evAux = document.getElementById("evAux");
   var chartEl = document.getElementById("chart");
   var chartEmpty = document.getElementById("chartEmpty");
   var chartTitle = document.getElementById("chartTitle");
@@ -583,6 +655,60 @@
         '<span class="weight-dots" title="market influence">' + dots + "</span>" +
         '</div><div class="off-title">' + t + "</div></div>";
     }).join("");
+  }
+
+  // The calendar panel is instrument-agnostic until a scan names one; asset-
+  // specific rows (crude inventories) are only shown once we know they apply.
+  function renderEvents(symbol) {
+    var er = CTX && CTX.eventRisk;
+    if (!er) {
+      eventPanel.innerHTML = '<div class="off-empty">Economic calendar unavailable — the context pass has not run yet.</div>';
+      evAux.textContent = "unavailable";
+      return;
+    }
+    var now = Date.now();
+    var ups = (er.events || []).filter(function (e) {
+      if (new Date(e.when_utc).getTime() <= now) return false;
+      if (!e.only) return true;
+      return symbol ? e.only.indexOf(symbol) !== -1 : false;
+    }).sort(function (a, b) { return a.when_utc.localeCompare(b.when_utc); });
+    evAux.textContent = symbol ? "for " + symbol : "US releases";
+
+    var html = "";
+    var block = ups.filter(function (e) { return e.severity === 3; })[0];
+    if (block) {
+      var mins = Math.round((new Date(block.when_utc).getTime() - now) / 60000);
+      html += '<div class="ev-note">Next blackout: <b>' + esc(block.name) + "</b> in " + esc(fmtMins(mins)) +
+        ". Setups are vetoed inside 90 minutes of a severity-3 print.</div>";
+    }
+
+    if (!ups.length) {
+      html += '<div class="off-empty">No classified US releases in the next 6 days.</div>';
+    } else {
+      html += ups.slice(0, 8).map(function (e) {
+        var mins = Math.round((new Date(e.when_utc).getTime() - now) / 60000);
+        var meta = [];
+        if (e.consensus) meta.push("cons " + e.consensus);
+        if (e.previous) meta.push("prev " + e.previous);
+        return '<div class="ev-row sev' + e.severity + '">' +
+          '<span class="ev-when">T-' + esc(fmtMins(mins)) + "</span>" +
+          '<span class="ev-name">' + esc(e.name) + "</span>" +
+          '<span class="ev-meta">' + esc(meta.join(" · ")) + "</span></div>";
+      }).join("");
+    }
+
+    // CFTC net speculative positioning, when we have it for this instrument.
+    var pos = CTX.positioning || {};
+    var keys = symbol ? (pos[symbol] ? [symbol] : []) : Object.keys(pos);
+    if (keys.length) {
+      html += '<div class="pos-wrap">' + keys.map(function (k) {
+        var v = pos[k];
+        var short = /^-/.test(String(v.net));
+        return '<span class="pos-chip ' + (short ? "short" : "long") + '" title="' +
+          esc(v.basis) + '">' + esc(k) + " <b>" + esc(v.net) + "</b></span>";
+      }).join("") + "</div>";
+    }
+    eventPanel.innerHTML = html;
   }
 
   function renderNews(symbol) {
@@ -793,6 +919,7 @@
 
     var x = cand.x, dir = cand.dir, score = cand.score, rules = cand.rules, d = x.decimals;
     renderNews(x.symbol);
+    renderEvents(x.symbol);
 
     document.getElementById("agent-0").classList.add("active");
     setChip(0, "scanning", "Scanning");
@@ -895,17 +1022,43 @@
         else { refLabel = "ATR projection"; refVal = x.last - x.atrIntraday * 2.5; targetDist = x.atrIntraday * 2.5; }
       }
       var rr = targetDist / stopDist;
-      var minRR = macroClean ? 1.0 : 1.5, maxRR = 3.0;
-      var veto = rr < minRR || rr > maxRR;
+      var evr = eventRiskFor(x.symbol);
+      // A scheduled print inside the window raises the floor before the R:R is
+      // judged, so the bar moves rather than the result being overridden after.
+      var minRR = macroClean ? 1.0 : 1.5;
+      if (evr.rrBump) minRR = Math.max(minRR, 1.8);
+      var maxRR = 3.0;
+      var rrFail = rr < minRR || rr > maxRR;
+      var veto = rrFail || evr.veto;
+      var blocker = evr.blocking[0];
       setTimeout(function () {
         setChip(2, veto ? "veto" : "pass", veto ? "Vetoed" : "Cleared");
         document.getElementById("agent-2").classList.remove("active");
+
+        var verdict;
+        if (evr.veto) {
+          verdict = "Event blackout: " + blocker.name + " prints in " + fmtMins(blocker.minsAway) +
+            ". An intraday stop is not survivable through that — vetoed regardless of a " + fmt2(rr) + " R:R.";
+        } else if (rrFail) {
+          verdict = "R:R " + fmt2(rr) + " falls outside the desk's " + minRR + "–" + maxRR + " band — vetoed.";
+        } else {
+          verdict = "R:R " + fmt2(rr) + " clears the " + minRR + "–" + maxRR + " band" +
+            (evr.rrBump ? " (floor raised to " + minRR + " — " + evr.elevated[0].name + " in " + fmtMins(evr.elevated[0].minsAway) + ")" : "") +
+            ", sizing approved.";
+        }
+
         typeLines(2, [
           { text: "15-min ATR14 " + fmtP(x.atrIntraday, d) + " — stop at 1.2x ATR (" + fmt2(stopPct) + "% away), target referencing " + refLabel + " (" + fmtP(refVal, d) + ")." },
-          { text: veto
-              ? "R:R " + fmt2(rr) + " falls outside the desk's " + minRR + "–" + maxRR + " band — vetoed."
-              : "R:R " + fmt2(rr) + " clears the " + minRR + "–" + maxRR + " band, sizing approved.", strong: true },
-        ], function () { runChief(macroClean, stopDist, targetDist, rr, veto, refLabel); });
+          { text: verdict, strong: true },
+        ], function () { runChief(macroClean, stopDist, targetDist, rr, veto, refLabel, evr); });
+
+        var evRows = evr.upcoming.slice(0, 6).map(function (e) {
+          var cons = e.consensus ? "  cons " + e.consensus : "";
+          var prev = e.previous ? " / prev " + e.previous : "";
+          return { txt: "T-" + fmtMins(e.minsAway) + "  " + e.name + " (sev " + e.severity + ")" + cons + prev,
+                   d: 0, hit: e.severity < 3 };
+        });
+
         setDrill(2, '<div class="drill-title">Sizing math</div>' + kvHtml([
           ["ATR14 (15-min)", fmtP(x.atrIntraday, d)],
           ["Stop multiple", "1.2x ATR"],
@@ -914,13 +1067,16 @@
           ["Target distance", fmtP(targetDist, d)],
           ["Reward : Risk", fmt2(rr)],
         ]) + '<div class="drill-title">Risk gate</div>' + rulesHtml([
-          { txt: "R:R ≥ " + minRR + " floor" + (macroClean ? " (clean macro)" : " (raised — cautious macro)"), d: rr >= minRR ? 1 : 0, hit: rr >= minRR },
+          { txt: "R:R ≥ " + minRR + " floor" + (evr.rrBump ? " (raised — event inside 4h)" : (macroClean ? " (clean macro)" : " (raised — cautious macro)")), d: rr >= minRR ? 1 : 0, hit: rr >= minRR },
           { txt: "R:R ≤ " + maxRR + " ceiling — beyond this the target is unrealistic intraday", d: rr <= maxRR ? 1 : 0, hit: rr <= maxRR },
-        ]));
+          { txt: "No severity-3 release inside 90 minutes", d: evr.veto ? 0 : 1, hit: !evr.veto },
+        ]) + '<div class="drill-title">Scheduled events ahead</div>' +
+          (evRows.length ? rulesHtml(evRows)
+                         : '<div class="off-empty">No classified releases in the next 6 days.</div>'));
       }, 820);
     }
 
-    function runChief(macroClean, stopDist, targetDist, rr, veto, refLabel) {
+    function runChief(macroClean, stopDist, targetDist, rr, veto, refLabel, evr) {
       document.getElementById("agent-3").classList.add("active");
       setChip(3, "scanning", "Synthesizing");
       setTimeout(function () {
@@ -929,16 +1085,19 @@
           g === "PASS" ? "No trade" : "Grade " + gradeLabel(g));
         document.getElementById("agent-3").classList.remove("active");
         typeLines(3, [
-          { text: "Weighing a " + score + " technical read against a " + (macroClean ? "clean" : "cautious") + " macro backdrop and a " + fmt2(rr) + " R:R." },
+          { text: "Weighing a " + score + " technical read against a " + (macroClean ? "clean" : "cautious") + " macro backdrop and a " + fmt2(rr) + " R:R." +
+              (evr && evr.veto ? " The calendar overrides both." : "") },
           { text: g === "PASS"
-              ? "Final call: PASS — does not clear the desk's risk bar this hour."
+              ? (evr && evr.veto
+                  ? "Final call: PASS — standing aside into " + evr.blocking[0].name + "."
+                  : "Final call: PASS — does not clear the desk's risk bar this hour.")
               : "Final call: " + gradeLabel(g) + " grade, " + dir.toUpperCase() + " " + x.symbol + ".", strong: true },
         ]);
         var aplus = !veto && score >= 80 && macroClean && rr >= 2.5;
         var aGrade = !veto && !aplus && score >= 70 && rr >= 2;
         var bGrade = !veto && !aplus && !aGrade && score >= 60;
         setDrill(3, '<div class="drill-title">Grade ladder — first match wins</div>' + rulesHtml([
-          { txt: "PASS — risk gate vetoed", d: veto ? 1 : 0, hit: veto ? true : null },
+          { txt: "PASS — risk gate vetoed" + (evr && evr.veto ? " (event blackout)" : ""), d: veto ? 1 : 0, hit: veto ? true : null },
           { txt: "A+ — score ≥80 AND clean macro AND R:R ≥2.5", d: aplus ? 1 : 0, hit: aplus ? true : null },
           { txt: "A — score ≥70 AND R:R ≥2", d: aGrade ? 1 : 0, hit: aGrade ? true : null },
           { txt: "B — score ≥60", d: bGrade ? 1 : 0, hit: bGrade ? true : null },
@@ -946,11 +1105,13 @@
         ]) + '<div class="drill-title">Final inputs</div>' + kvHtml([
           ["Technical score", score + " / 100"],
           ["Macro", macroClean ? "clean" : "cautious"],
+          ["Event risk", evr && evr.veto ? "BLACKOUT — " + evr.blocking[0].name + " in " + fmtMins(evr.blocking[0].minsAway)
+              : (evr && evr.rrBump ? "elevated — " + evr.elevated[0].name + " in " + fmtMins(evr.elevated[0].minsAway) : "clear")],
           ["R:R", fmt2(rr)],
           ["Target anchor", refLabel],
           ["Result", gradeLabel(g)],
         ]));
-        renderSetup(x, dir, g, score, stopDist, targetDist, rr, macroClean);
+        renderSetup(x, dir, g, score, stopDist, targetDist, rr, macroClean, evr);
         logRun(x, dir, g, rr, stopDist, targetDist);
         running = false;
         runBtn.disabled = false;
@@ -959,17 +1120,22 @@
     }
   }
 
-  function renderSetup(x, dir, g, score, stopDist, targetDist, rr, macroClean) {
+  function renderSetup(x, dir, g, score, stopDist, targetDist, rr, macroClean, evr) {
     var d = x.decimals;
     if (g === "PASS") {
+      var why = (evr && evr.veto)
+        ? " Sizing at " + fmt2(rr) + ":1 is beside the point — " + esc(evr.blocking[0].name) +
+          " prints in " + fmtMins(evr.blocking[0].minsAway) +
+          (evr.blocking[0].consensus ? " (consensus " + esc(evr.blocking[0].consensus) + ")" : "") +
+          " and an intraday stop cannot survive the gap. No position taken."
+        : " but sizing at " + fmt2(rr) + ":1 falls outside the desk's 1–3 R:R band. No position taken.";
       setupCard.innerHTML =
         '<div class="setup-head"><div class="ticker-block">' +
           '<span class="ticker-sym">' + esc(x.symbol) + "</span>" +
           '<span class="class-chip">' + esc(x.assetClass) + "</span>" +
           '<span class="ticker-name">' + esc(x.name) + "</span></div>" +
           '<span class="grade-badge g-PASS">PASS</span></div>' +
-        '<div class="thesis">' + esc(dir.toUpperCase()) + " read scores " + score + "/100, but sizing at " +
-          fmt2(rr) + ":1 falls outside the desk's 1–3 R:R band. No position taken.</div>";
+        '<div class="thesis">' + esc(dir.toUpperCase()) + " read scores " + score + "/100," + why + "</div>";
       drawChart(x, null);
       return;
     }
@@ -1061,7 +1227,7 @@
     CANDIDATES = rankCandidates();
     BY_SYMBOL = {};
     CANDIDATES.forEach(function (c) { BY_SYMBOL[c.x.symbol] = c; });
-    renderIndices(); renderFreshness(); populateSelect(); renderOfficials();
+    renderIndices(); renderFreshness(); populateSelect(); renderOfficials(); renderEvents(null);
     loadJournal(); resolveOutcomes(); renderHistory(); updateWinRate();
     if (!CANDIDATES.length) {
       runBtn.disabled = true;

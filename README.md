@@ -20,6 +20,15 @@ commodities, forex) from real market data. Every number on the page is fetched, 
   seniority — a Chair or Vice Chair moves markets in a way a regional president does not.
   Instruments are mapped to the currencies whose policy actually bears on them, with direction:
   a hawkish Fed is USD-positive, which is EURUSD-*negative* but USDJPY-*positive*.
+- **Event-risk blackout.** Pulls the scheduled US macro calendar and classifies each release by
+  severity. A severity-3 print (Nonfarm Payrolls, CPI, PCE, an FOMC decision) inside **90 minutes**
+  is a hard veto no matter how good the setup looks — an intraday stop cannot survive the gap
+  through a payrolls print, so the measured R:R is fiction. Anything severity-2 or worse inside
+  4 hours raises the R:R floor to 1.8 instead. The Risk Manager shows the full queue of what is
+  coming and how far away it is.
+- **CFTC net speculative positioning** for gold, silver, copper, crude, natural gas and the index
+  futures — who is already leaning which way. Labelled with its real vintage: the figure is the
+  previous report, and CFTC positions are as of the Tuesday before that.
 - **Headline sentiment** per instrument, with the matched keywords shown so a score can be audited.
 - **Charts.** TradingView Lightweight Charts, vendored locally, with entry/stop/target plotted.
 - **Trade journal.** Tick a setup you actually took; it auto-resolves to WIN/LOSS against real
@@ -59,7 +68,16 @@ Worker source lives in a sibling directory (`a-plus-desk-worker`), not in this r
 | ECB releases | ecb.europa.eu RSS | none |
 | Bank of England | bankofengland.co.uk RSS | none |
 | Per-instrument headlines | Yahoo Finance search | none |
+| Economic calendar + CFTC positioning | Nasdaq calendar API | none |
+| Forward Fed speeches / FOMC dates | federalreserve.gov calendar JSON | none |
 | Congress/Senate disclosures | Financial Modeling Prep | **`FMP_API_KEY` worker secret** (optional) |
+
+Two traps in those feeds, both handled in `fetchEconCalendar`:
+
+- Nasdaq's `date=X` returns the events for **X-1**. Verified against two known releases.
+- Its time column is labelled `gmt` but carries **New York** time. Taking the label at face value
+  would put every event 4–5 hours early; the offset is resolved from the tz database, not hardcoded,
+  so the DST switchover doesn't silently shift the whole calendar.
 
 Congressional trading is the one layer that needs a key — the free public S3 mirrors that used to
 serve STOCK Act filings now return 403. Without the key that layer is simply reported as disabled;
