@@ -70,7 +70,7 @@ Worker source lives in a sibling directory (`a-plus-desk-worker`), not in this r
 | Per-instrument headlines | Yahoo Finance search | none |
 | Economic calendar + CFTC positioning | Nasdaq calendar API | none |
 | Forward Fed speeches / FOMC dates | federalreserve.gov calendar JSON | none |
-| Congress/Senate disclosures | Financial Modeling Prep | **`FMP_API_KEY` worker secret** (optional) |
+| Congress/Senate disclosures | Financial Modeling Prep | **`FMP_API_KEY` worker secret** |
 
 Two traps in those feeds, both handled in `fetchEconCalendar`:
 
@@ -80,7 +80,12 @@ Two traps in those feeds, both handled in `fetchEconCalendar`:
   so the DST switchover doesn't silently shift the whole calendar.
 
 Congressional trading is the one layer that needs a key — the free public S3 mirrors that used to
-serve STOCK Act filings now return 403. Without the key that layer is simply reported as disabled;
-everything else runs.
+serve STOCK Act filings now return 403. Without the key that layer reports itself as disabled and
+everything else runs. On FMP's free tier `limit` must be **≤ 25**; asking for more returns HTTP 402
+rather than clamping, which fails the whole layer.
+
+Disclosures are surfaced per instrument in the Macro/Policy Analyst, labelled with both the trade
+date and the filing date. The STOCK Act allows weeks of lag, so this is positioning context — who
+is already leaning which way — and deliberately not presented as an entry trigger.
 
 Not investment advice — an algorithmic technical/risk scan for demonstration.

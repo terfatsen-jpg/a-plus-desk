@@ -500,6 +500,19 @@
     return (CTX && CTX.positioning) ? (CTX.positioning[symbol] || null) : null;
   }
 
+  // STOCK Act disclosures touching this instrument, most recently disclosed
+  // first. Note these are filed weeks after the trade — treat as context on who
+  // is positioned, never as a timing signal.
+  function congressFor(symbol) {
+    var c = CTX && CTX.congress;
+    if (!c || !c.enabled || !c.bySymbol) return null;
+    var rows = c.bySymbol[symbol];
+    if (!rows || !rows.length) return null;
+    return rows.slice().sort(function (a, b) {
+      return String(b.disclosed || "").localeCompare(String(a.disclosed || ""));
+    });
+  }
+
   function fmtMins(m) {
     if (m < 60) return m + "m";
     var h = Math.floor(m / 60), r = m % 60;
@@ -949,7 +962,7 @@
       document.getElementById("agent-1").classList.add("active");
       setChip(1, "scanning", "Checking");
       var vix = vixInfo(), clean = !!vix && vix.last < 18;
-      var pol = policyFor(x.symbol), news = newsFor(x.symbol);
+      var pol = policyFor(x.symbol), news = newsFor(x.symbol), cong = congressFor(x.symbol);
       setTimeout(function () {
         setChip(1, clean ? "pass" : "flag", clean ? "Clear" : "Caution");
         document.getElementById("agent-1").classList.remove("active");
@@ -970,12 +983,20 @@
               : news.news.length + " headlines found, none carried scoring keywords.")
           : "No headlines retrieved for this instrument.";
 
-        typeLines(1, [
-          { text: "Cross-checking vol regime, policy exposure and headlines for " + x.symbol + "." },
+        var lines = [
+          { text: "Cross-checking vol regime, policy exposure, disclosures and headlines for " + x.symbol + "." },
           { text: (vix ? "VIX " + fmt2(vix.last) + " (" + sign(vix.chg_pct) + "%)" : "VIX unavailable") + (clean ? " — no desk-wide de-risking flag." : " — elevated regime, desk trims size.") },
           { text: polLine },
-          { text: newsLine, strong: true },
-        ], function () { runRisk(clean); });
+        ];
+        if (cong) {
+          var buys = cong.filter(function (t) { return /purchase/i.test(t.type || ""); }).length;
+          var sells = cong.filter(function (t) { return /sale|sold/i.test(t.type || ""); }).length;
+          lines.push({ text: cong.length + " congressional disclosure(s) on " + x.symbol + " — " +
+            buys + " purchase / " + sells + " sale, most recently " + cong[0].name +
+            " (filed " + cong[0].disclosed + "). Filed weeks after the fact, so this is positioning context, not a timing signal." });
+        }
+        lines.push({ text: newsLine, strong: true });
+        typeLines(1, lines, function () { runRisk(clean); });
 
         var polHtml = "";
         if (pol) {
@@ -992,12 +1013,26 @@
               }).map(function (r) { return { txt: r.txt, d: r.d, hit: null }; })) : "");
           });
         }
+        var congHtml = "";
+        if (cong) {
+          congHtml = '<div class="drill-title">Congressional disclosures (STOCK Act)</div>' +
+            rulesHtml(cong.slice(0, 6).map(function (t) {
+              var isBuy = /purchase/i.test(t.type || "");
+              return {
+                txt: t.name + " (" + t.chamber + ") " + (t.type || "?").toUpperCase() + " " +
+                     (t.amount || "amount not stated") + " · traded " + (t.date || "?") +
+                     ", filed " + (t.disclosed || "?"),
+                d: 0, hit: isBuy,
+              };
+            })) +
+            '<div class="ev-note">Disclosure lags the trade by weeks under the STOCK Act — read as who is positioned, not as an entry trigger.</div>';
+        }
         setDrill(1, '<div class="drill-title">Volatility regime</div>' + kvHtml([
           ["VIX", vix ? fmt2(vix.last) : "n/a"],
           ["Regime", clean ? "clean (<18)" : "cautious (≥18)"],
           ["Effect", clean ? "R:R floor stays 1.0" : "R:R floor raised to 1.5"],
           [x.symbol + " today", sign(x.chg_pct) + "%"],
-        ]) + polHtml + '<div class="drill-title">Headline sentiment</div>' + kvHtml([
+        ]) + polHtml + congHtml + '<div class="drill-title">Headline sentiment</div>' + kvHtml([
           ["Headlines", news ? String(news.news.length) : "0"],
           ["Scored", news ? String(news.scoredCount || 0) : "0"],
           ["Net", (news && news.scoredCount) ? ((news.netSentiment > 0 ? "+" : "") + news.netSentiment) : "n/a"],
